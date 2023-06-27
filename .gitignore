@@ -1,0 +1,15 @@
+.vscode/
+APIs/
+Bin/
+Test/
+Training Model/
+__pycache__/
+functions list.txt
+secret.key
+credentials.txt
+Credentials.cache
+.google-cookie
+test.py
+test2.py
+test3.py
+test4.py

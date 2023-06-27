@@ -1,0 +1,17 @@
+[
+  {
+    "intention": "Here is me doing sur practice",
+    "lyrics": "Sa Re Ga Ma Pa Dha Ni Sa \ud83d\ude2e\ud83c\udfb6\ud83c\udfb6\ud83c\udfb6",
+    "audio_path": "Data\\Sounds\\Sur Practice.wav"
+  },
+  {
+    "intention": "I made this song just for you!",
+    "lyrics": "I am your personal assistant, tu tu tu tu,\ntu tu tu tu, I am here to help you tu tu tu tu\nI can search for you, even find your places,\ncall for you, mail for you, chat for you,\nlaugh with you, sing for you even play games\nand cover many bases.",
+    "audio_path": "Data\\Sounds\\jingle_bells.wav"
+  },
+  {
+    "intention": null,
+    "lyrics": "Dashing through the snow in a one-horse open sleigh\nO'er the fields we go laughing all the way\n\nBells on bobtail ring making spirits bright\nWhat fun it is to ride and sing a sleighing song tonight!\n\nJingle bells, jingle bells, jingle all the way.\nOh! what fun it is to ride in a one-horse open sleigh.\n\nJingle bells, jingle bells, jingle all the way;\nOh! what fun it is to ride in a one-horse open sleigh.",
+    "audio_path": "Data\\Sounds\\jingle_bells.wav"
+  }
+]
