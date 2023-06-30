@@ -19,11 +19,13 @@ from jokeapi import Jokes
 from threading import Thread
 from datetime import datetime
 import speech_recognition as sr
+from pymongo import MongoClient
 from googlesearch import search
 from encryption import Encryption
 from random import randint, sample
 from gnewsclient import gnewsclient
 from gingerit.gingerit import GingerIt
+from functions import CredentialManager
 
 # -------------------------------------------------------------------------------------------------------
 
@@ -31,6 +33,19 @@ from gingerit.gingerit import GingerIt
 # Current directory of the application
 application_directory = os.getcwd()
 
+
+# Setting database connection
+# -------------------------------------------------------------------------------------------------------
+__ID__, __PASSWORD__ = CredentialManager().read_credential()
+__database_url__  = Encryption(
+                b"gAAAAABkeM77CniuvGNLTxhTXcvvxS4482UUd-YvStyomao17R01SW_7UrXKCjvUfjwrmYRZ-YEztP6Xpb02tF3mDqH42ECzrMYiw2d6hcw2ZeZuIQXzTNvl-ylfk39vReUEseO0KnAIsnkcdJQeHOTvhjufWM5yYEAShBSZ6g_E3qqcy9pWhlA="
+            ).decrypt_text()
+__client__  = MongoClient(__database_url__)
+__database__ = __client__["Assistant"]
+__collection__ = __database__["User Credentials"] 
+
+
+# -------------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------------------------
 
