@@ -2,11 +2,11 @@ import os
 import psutil
 import pymongo
 import requests
+import platform
 import subprocess
 import pyscreenshot
 from gtts import gTTS
 from win32 import win32cred
-
 # from slugify import slugify
 from threading import Thread
 from datetime import datetime
@@ -274,11 +274,7 @@ def device_name() -> str:
 # This function returns the model name of the windows device
 # ------------------------------------------------------------------------------------------------------------
 def device_Model() -> str:
-    response = subprocess.check_output(
-        ["wmic", "computersystem", "get", "name"]
-    ).decode()
-    response = response.split()
-    device_name = response[1]
+    device_name = platform.node()
     return device_name
 
 
