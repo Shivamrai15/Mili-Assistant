@@ -14,7 +14,7 @@ from tkinter import messagebox
 from functools import lru_cache
 from playsound import playsound
 from encryption import Encryption
-from location import geoLogicalCoordinate
+from location import geoLogicalCoordinate, GPS
 from deep_translator import GoogleTranslator
 from googletrans import LANGUAGES, LANGCODES
 
@@ -100,7 +100,10 @@ def UserCredentials(Id) -> dict:
 class Weather:
     def __init__(self, location):
         self.location = location
-        self.coordinates = geoLogicalCoordinate(self.location)
+        if self.location is not None:
+            self.coordinates = geoLogicalCoordinate(self.location)
+        else:
+            self.coordinates = GPS.getLocation()
         self.hourly_forecast = None
         self.API_data = None
 

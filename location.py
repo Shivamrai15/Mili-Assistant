@@ -77,16 +77,24 @@ class Route:
         self.origin = None
         self.destination = None
         self._route = None
+        self.home = None
 
     # Convert address into geological coordinates and add into the set coordinates
     def geoCoding(self, location):
-        coordinate = geoLogicalCoordinate(location)
-        self.coordinates.add(coordinate)
+        try:
+            coordinate = geoLogicalCoordinate(location)
+            self.coordinates.add(coordinate)
+        except:
+            pass
 
     # this function is used to retrieve route coordinates, distance and time
     def routeAPI(self):
-        self.destination = self.coordinates.pop()
-        self.origin = self.coordinates.pop()
+        if len(self.coordinates) == 2:
+            self.destination = self.coordinates.pop()
+            self.origin = self.coordinates.pop()
+        else:
+            self.destination = self.coordinates.pop()
+            self.origin = self.home
         url = "https://trueway-directions2.p.rapidapi.com/FindDrivingRoute"
         querystring = {"stops": f"{self.origin[0]}, {self.origin[1]};{self.destination[0]}, {self.destination[1]}"}
         headers = {
@@ -113,9 +121,17 @@ class Route:
         location = set()
         for enitity in entities:
             location.add(enitity.get('text'))
-        if len(location)!=2:
-            return None, None
-        else:
+        if len(location) == 1:
+            self.home = GPS.getLocation()
+            destination = location.pop()
+            thread2 = Thread(target=self.geoCoding, args=(destination,))
+            thread2.start()
+            thread2.join()
+            self.routeAPI()
+            location = {"origin" : self.origin,
+                        "destination": self.destination}
+            return location, self._route
+        elif len(location) == 2:
             origin = location.pop()
             destination = location.pop()
             thread1 = Thread(target=self.geoCoding, args=(origin,))
@@ -126,6 +142,8 @@ class Route:
             location = {"origin" : self.origin,
                         "destination": self.destination}
             return location, self._route
+        else:
+            return None, None
             
 # ---------------------------------------------------------------------------------------------------------------
 

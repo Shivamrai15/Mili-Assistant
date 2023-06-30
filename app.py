@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import pickle
 import random
 import zxcvbn
@@ -17,10 +18,10 @@ from PIL import Image
 from tkinter import ttk
 from location import GPS
 from random import randint
-from threading import Thread
 from functions import Weather
 from functools import lru_cache
 from encryption import Encryption
+from threading import Thread, Lock
 from emailMessage import MailToUser
 from functions import UserCredentials
 from functions import CredentialManager
@@ -33,11 +34,10 @@ from location import ip_based_location, reverseGeocoding
 application_directory = os.getcwd()
 
 
-# Class to download the file 
+# Class to download the file
 # ---------------------------------------------------------------------------------------------------
 class Downloaded_Data:
-
-    def __init__(self, data:dict, chats, search_history, save_file_path) :
+    def __init__(self, data: dict, chats, search_history, save_file_path):
         self.data = data
         self.search_history = search_history
         self.chats = chats
@@ -47,21 +47,22 @@ class Downloaded_Data:
         tempfile.tempdir = dir_name
         path = tempfile.gettempdir()
         return path
-    
+
     def user_personal_details(self):
         path = self.create_directory("Personal Details")
         file_name = "personal_details.json"
         file_path = os.path.join(path, file_name)
-        file = {"id" : str(self.data.get('_id')),
-                "user_name": self.data.get('name'),
-                "phone number" :  self.data.get("phone number"),
-                "email": self.data.get("email"),
-                "gender": self.data.get("gender"),
-                "data of birth" : self.data.get("DOB").timestamp(),
-                "other_info" : self.data.get('personal_info')}
+        file = {
+            "id": str(self.data.get("_id")),
+            "user_name": self.data.get("name"),
+            "phone number": self.data.get("phone number"),
+            "email": self.data.get("email"),
+            "gender": self.data.get("gender"),
+            "data of birth": self.data.get("DOB").timestamp(),
+            "other_info": self.data.get("personal_info"),
+        }
         jsonfile = json.dumps(file, indent=5)
         return jsonfile, file_path
-    
 
     def user_account_details(self):
         path = self.create_directory("Account Details")
@@ -70,30 +71,33 @@ class Downloaded_Data:
         previous_login_list = self.data.get("login_dates")
         previous_login_details = []
         for doc in previous_login_list:
-            doc['time'] = doc['time'].timestamp()
+            doc["time"] = doc["time"].timestamp()
             previous_login_details.append(doc)
 
-        file = {"previous_passwords" :  self.data.get("previous_passwords"),
-                "account_created" : self.data.get("ac_date").timestamp(),
-                "last_login_date" : self.data.get("last_login_date").timestamp(),
-                "last_login_device_model" : self.data.get("last_login_device_model"),
-                "last_login_coordinates" : {"latitude": self.data.get("last_login_coordinates")[0],
-                                            "longitude": self.data.get("last_login_coordinates")[1]},
-                "last_login_location" : self.data.get("last_login_location"),
-                "last_login_ip" : self.data.get("last_login_ip"),
-                "previous_login_details" : previous_login_details}
+        file = {
+            "previous_passwords": self.data.get("previous_passwords"),
+            "account_created": self.data.get("ac_date").timestamp(),
+            "last_login_date": self.data.get("last_login_date").timestamp(),
+            "last_login_device_model": self.data.get("last_login_device_model"),
+            "last_login_coordinates": {
+                "latitude": self.data.get("last_login_coordinates")[0],
+                "longitude": self.data.get("last_login_coordinates")[1],
+            },
+            "last_login_location": self.data.get("last_login_location"),
+            "last_login_ip": self.data.get("last_login_ip"),
+            "previous_login_details": previous_login_details,
+        }
         jsonfile = json.dumps(file, indent=4)
         return jsonfile, file_path
 
-
-
-
-    def parsing_data(self)->list:
+    def parsing_data(self) -> list:
         jsonfile_1, directory_1 = self.user_personal_details()
         jsonfile_2, directory_2 = self.user_account_details()
 
-        data = [{"file": jsonfile_1, "directory": directory_1},
-                {"file": jsonfile_2, "directory": directory_2}]        
+        data = [
+            {"file": jsonfile_1, "directory": directory_1},
+            {"file": jsonfile_2, "directory": directory_2},
+        ]
         return data
 
     def createFile(self):
@@ -101,17 +105,16 @@ class Downloaded_Data:
             data = self.parsing_data()
             file_name = f"mili_{str(self.data.get('email')).replace('@gmail.com', '').strip()}.zip"
             zip_file_path = os.path.join(self.save_file_path, file_name)
-            password = self.data.get('password')
+            password = self.data.get("password")
             with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
                 zip_file.setpassword(password.encode())
                 for doc in data:
                     file_path = doc.get("directory")
-                    file = doc.get('file')        
+                    file = doc.get("file")
                     zip_file.writestr(file_path, file)
             return True
-        except :
+        except:
             return False
-
 
 
 # class to check the strength and pwnage of the user password
@@ -284,29 +287,56 @@ class GUI(customtkinter.CTk):
 
     # -----------------------------------------------------------------------------------------------------------
     def Profile(self):
-
         # class to download the data
-        # ---------------------------------------------------------------------------------------------------- 
-        class request_model():
+        # ----------------------------------------------------------------------------------------------------
+        class request_model:
             def __init__(self):
                 self.path = None
                 self.account_data = None
                 self.chats = None
                 self.history = None
 
-                self.frame = customtkinter.CTkFrame(download_data_frame, fg_color = "#FFF5EE", corner_radius=0)
-                self.frame.grid(row=1, column=0, sticky = "nsew")
-                customtkinter.CTkLabel(self.frame, text = "Download your data", fg_color= "#FFF5EE", text_color="#111",  font = ("Sitka Small", 16, "bold")).pack(side = TOP, anchor = "center", pady=(30, 0))
-                customtkinter.CTkLabel(self.frame, text = "We'll download a file with your information. You can receive\nit in JSON, which may be easier to import to another service.", fg_color= "#FFF5EE", text_color="#111",  font = ("Sitka Small", 12, "normal")).pack(side = TOP, anchor = "center")
-                self.progress_bar = customtkinter.CTkProgressBar(self.frame,
-                width=300,
-                height=15,
-                orientation="horizontal",
-                mode="determinate",
-                fg_color="#FFF5EE",
-                progress_color="#19b04f")
-                download_file_button = customtkinter.CTkButton(self.frame, text = "Download", corner_radius=5, font = ("Sitka Small", 15, "bold"), height = 40, width = 270, text_color="#111", fg_color="#1ed760", border_color="#111", hover_color="#19b04f", command=lambda: Thread(target = self.download_path).start())
-                download_file_button.pack(side= BOTTOM, anchor ="center", pady=(0, 40))
+                self.frame = customtkinter.CTkFrame(
+                    download_data_frame, fg_color="#FFF5EE", corner_radius=0
+                )
+                self.frame.grid(row=1, column=0, sticky="nsew")
+                customtkinter.CTkLabel(
+                    self.frame,
+                    text="Download your data",
+                    fg_color="#FFF5EE",
+                    text_color="#111",
+                    font=("Sitka Small", 16, "bold"),
+                ).pack(side=TOP, anchor="center", pady=(30, 0))
+                customtkinter.CTkLabel(
+                    self.frame,
+                    text="We'll download a file with your information. You can receive\nit in JSON, which may be easier to import to another service.",
+                    fg_color="#FFF5EE",
+                    text_color="#111",
+                    font=("Sitka Small", 12, "normal"),
+                ).pack(side=TOP, anchor="center")
+                self.progress_bar = customtkinter.CTkProgressBar(
+                    self.frame,
+                    width=300,
+                    height=15,
+                    orientation="horizontal",
+                    mode="determinate",
+                    fg_color="#FFF5EE",
+                    progress_color="#19b04f",
+                )
+                download_file_button = customtkinter.CTkButton(
+                    self.frame,
+                    text="Download",
+                    corner_radius=5,
+                    font=("Sitka Small", 15, "bold"),
+                    height=40,
+                    width=270,
+                    text_color="#111",
+                    fg_color="#1ed760",
+                    border_color="#111",
+                    hover_color="#19b04f",
+                    command=lambda: Thread(target=self.download_path).start(),
+                )
+                download_file_button.pack(side=BOTTOM, anchor="center", pady=(0, 40))
 
             def download_account_data(self):
                 self.url = Encryption(
@@ -315,59 +345,63 @@ class GUI(customtkinter.CTk):
                 client = pymongo.MongoClient(self.url)
                 db = client["Assistant"]
                 collection = db["User Credentials"]
-                data = collection.find_one({"email":gmail})
-                self.progress_bar.set(.3)
+                data = collection.find_one({"email": gmail})
+                self.progress_bar.set(0.3)
                 self.account_data = data
-                
+
             def download_chats(self):
-                self.progress_bar.set(.6)
+                self.progress_bar.set(0.6)
                 return None
-            
+
             def download_history(self):
-                self.progress_bar.set(.8)
+                self.progress_bar.set(0.8)
                 return None
-            
 
             def download_data(self):
-                exit_button.configure(state="disable", hover = False)
-                self.progress_bar.pack(side = TOP, anchor = "center", pady=(30, 20))
+                exit_button.configure(state="disable", hover=False)
+                self.progress_bar.pack(side=TOP, anchor="center", pady=(30, 20))
                 self.progress_bar.set(0)
                 self.download_account_data()
                 self.download_chats()
                 self.download_history()
-                confidence = Downloaded_Data(self.account_data, self.chats, self.history, self.path).createFile()
+                confidence = Downloaded_Data(
+                    self.account_data, self.chats, self.history, self.path
+                ).createFile()
                 if confidence is True:
-                    messagebox.showwarning("Mili","Thankyou for using our services. Your data has been downloaded")
+                    messagebox.showwarning(
+                        "Mili",
+                        "Thankyou for using our services. Your data has been downloaded",
+                    )
                     self.progress_bar.set(1)
                 else:
-                    messagebox.showwarning("Mili","Network issue. Please try again.")
-                
-                exit_button.configure(state="enable", hover = True, command = securityFrame.tkraise)
+                    messagebox.showwarning("Mili", "Network issue. Please try again.")
+
+                exit_button.configure(
+                    state="enable", hover=True, command=securityFrame.tkraise
+                )
                 download_userID.delete(0, END)
-
-
 
             def download_path(self):
                 self.path = filedialog.askdirectory()
                 if len(self.path) != 0:
-                    exit_button.configure(state="disable", hover = False)
-                    thread = Thread(target = self.download_data)
+                    exit_button.configure(state="disable", hover=False)
+                    thread = Thread(target=self.download_data)
                     thread.start()
                     thread.join()
-                
 
             def verify_credentials(self):
                 if download_userID.get() != password:
-                    messagebox.showwarning("Mili","The password you entered is invalid. Please try again.")
+                    messagebox.showwarning(
+                        "Mili", "The password you entered is invalid. Please try again."
+                    )
                 else:
                     self.frame.tkraise()
-        # -------------------------------------------------------------------------------------------------
 
+        # -------------------------------------------------------------------------------------------------
 
         def showDownloadFrame():
             self.showFrame(downloadFrame)
             self.showFrame(download_verification_frame)
-            
 
         # class for the application updates
         # -------------------------------------------------------------------------------------------------
@@ -631,7 +665,7 @@ class GUI(customtkinter.CTk):
                 ).get("previous_passwords")
                 password_list = []
                 for element in previous_passwords:
-                    password_list.append(element.get('password'))
+                    password_list.append(element.get("password"))
                 if (
                     current_password is None
                     or new_password is None
@@ -657,10 +691,14 @@ class GUI(customtkinter.CTk):
                             message="Your password cannot be reused. Please choose a new password.",
                         )
                     else:
-                        previous_passwords.append({
-                                                    "timestamp" : datetime.datetime.timestamp(datetime.datetime.now()),
-                                                    "password" : password
-                                                })
+                        previous_passwords.append(
+                            {
+                                "timestamp": datetime.datetime.timestamp(
+                                    datetime.datetime.now()
+                                ),
+                                "password": password,
+                            }
+                        )
                         self.collection.update_one(
                             {"email": gmail},
                             {
@@ -2109,24 +2147,78 @@ class GUI(customtkinter.CTk):
 
         # Download user data frame
         # ---------------------------------------------------------------------------------------------------
-        
-        download_data_frame = customtkinter.CTkFrame(downloadFrame, fg_color = "#FFF5EE", corner_radius=0)
-        download_data_frame.grid(row=0, column=0, sticky="n")
-        exitFrame = customtkinter.CTkFrame(download_data_frame, fg_color = "#f2e0d3", corner_radius=0)
-        exitFrame.grid(row=0, column=0, sticky="nsew")
-        exit_button = customtkinter.CTkButton(exitFrame, text = "X", font = ("Sitka Small", 17, "bold"), width = 40, corner_radius=0, fg_color= "#f2e0d3",text_color="black", hover_color="red", command = lambda : self.showFrame(securityFrame))
-        exit_button.pack(side = TOP, anchor = "e")
-        download_verification_frame = customtkinter.CTkFrame(download_data_frame, fg_color = "#FFF5EE", corner_radius=0)
-        download_verification_frame.grid(row=1, column=0, sticky="nsew")
-        customtkinter.CTkLabel(download_verification_frame, text = "Enter Your Mili Password", fg_color= "#FFF5EE", text_color="#111",  font = ("Sitka Small", 16, "bold")).pack(side = TOP, anchor = "w", padx=64, pady=(30, 40))
-        download_userID = customtkinter.CTkEntry(download_verification_frame, fg_color= "#FFF5EE", border_width= 2, border_color="#111", height = 40, width = 270, corner_radius= 5, placeholder_text= "Password", show = "\U00002022",font = ("Sitka Small", 15, "bold"), placeholder_text_color="#7f7f7f", text_color="#111")
-        download_userID.pack(side = TOP, anchor = "center", padx=64)
-        verifyCredential_button = customtkinter.CTkButton(download_verification_frame, text = "Request Download", corner_radius=5, font = ("Sitka Small", 15, "normal"), height = 40, width = 270, text_color="#111", fg_color="#1ed760", border_color="#111", hover_color="#19b04f", command=request_model().verify_credentials)
-        verifyCredential_button.pack(side= TOP, anchor ="center", pady=5, padx=64)
-        customtkinter.CTkButton(download_verification_frame, text = "Forget your password?", corner_radius=5, font = ("Sitka Small", 12, "normal"), text_color="#19b04f", fg_color="#FFF5EE", hover=False).pack(side = TOP, anchor = 'w', padx=64, pady=(5, 37))
-        
-        # ---------------------------------------------------------------------------------------------------
 
+        download_data_frame = customtkinter.CTkFrame(
+            downloadFrame, fg_color="#FFF5EE", corner_radius=0
+        )
+        download_data_frame.grid(row=0, column=0, sticky="n")
+        exitFrame = customtkinter.CTkFrame(
+            download_data_frame, fg_color="#f2e0d3", corner_radius=0
+        )
+        exitFrame.grid(row=0, column=0, sticky="nsew")
+        exit_button = customtkinter.CTkButton(
+            exitFrame,
+            text="X",
+            font=("Sitka Small", 17, "bold"),
+            width=40,
+            corner_radius=0,
+            fg_color="#f2e0d3",
+            text_color="black",
+            hover_color="red",
+            command=lambda: self.showFrame(securityFrame),
+        )
+        exit_button.pack(side=TOP, anchor="e")
+        download_verification_frame = customtkinter.CTkFrame(
+            download_data_frame, fg_color="#FFF5EE", corner_radius=0
+        )
+        download_verification_frame.grid(row=1, column=0, sticky="nsew")
+        customtkinter.CTkLabel(
+            download_verification_frame,
+            text="Enter Your Mili Password",
+            fg_color="#FFF5EE",
+            text_color="#111",
+            font=("Sitka Small", 16, "bold"),
+        ).pack(side=TOP, anchor="w", padx=64, pady=(30, 40))
+        download_userID = customtkinter.CTkEntry(
+            download_verification_frame,
+            fg_color="#FFF5EE",
+            border_width=2,
+            border_color="#111",
+            height=40,
+            width=270,
+            corner_radius=5,
+            placeholder_text="Password",
+            show="\U00002022",
+            font=("Sitka Small", 15, "bold"),
+            placeholder_text_color="#7f7f7f",
+            text_color="#111",
+        )
+        download_userID.pack(side=TOP, anchor="center", padx=64)
+        verifyCredential_button = customtkinter.CTkButton(
+            download_verification_frame,
+            text="Request Download",
+            corner_radius=5,
+            font=("Sitka Small", 15, "normal"),
+            height=40,
+            width=270,
+            text_color="#111",
+            fg_color="#1ed760",
+            border_color="#111",
+            hover_color="#19b04f",
+            command=request_model().verify_credentials,
+        )
+        verifyCredential_button.pack(side=TOP, anchor="center", pady=5, padx=64)
+        customtkinter.CTkButton(
+            download_verification_frame,
+            text="Forget your password?",
+            corner_radius=5,
+            font=("Sitka Small", 12, "normal"),
+            text_color="#19b04f",
+            fg_color="#FFF5EE",
+            hover=False,
+        ).pack(side=TOP, anchor="w", padx=64, pady=(5, 37))
+
+        # ---------------------------------------------------------------------------------------------------
 
         # Security Frame
         # ---------------------------------------------------------------------------------------------------
@@ -2134,11 +2226,7 @@ class GUI(customtkinter.CTk):
         securityScrollableFrame = customtkinter.CTkScrollableFrame(
             securityFrame, height=650, fg_color="#252525"
         )
-        securityScrollableFrame.pack(
-            side = TOP,
-            anchor = "center",
-            fill = "both"
-        )
+        securityScrollableFrame.pack(side=TOP, anchor="center", fill="both")
 
         customtkinter.CTkLabel(
             securityScrollableFrame,
@@ -2201,6 +2289,8 @@ class GUI(customtkinter.CTk):
             securityMainFrame,
             text="Navigate to the location",
             text_color="#1ed760",
+            height = 130,
+            width = 200,
             image=self.ImageObject("Data\\Images\\GUI\\compass.png", 70, 70),
             font=("Sitka Small", 13, "bold"),
             fg_color="#202020",
@@ -2299,7 +2389,7 @@ class GUI(customtkinter.CTk):
             text_color="#1ed760",
             font=("Sitka Small", 12, "bold"),
             hover=False,
-            command = showDownloadFrame
+            command=showDownloadFrame,
         ).grid(row=0, column=1, sticky="w", padx=5, pady=5)
         # --------------------------------------------------------------------------------------------------
 
@@ -3554,10 +3644,14 @@ class GUI(customtkinter.CTk):
                     user = self.user(self.email)
                     current_password = user.get("password")
                     previous_passwords = user.get("previous_passwords")
-                    previous_passwords.append({
-                                                "timestamp" : datetime.datetime.timestamp(datetime.datetime.now()),
-                                                "password" : current_password
-                                            })
+                    previous_passwords.append(
+                        {
+                            "timestamp": datetime.datetime.timestamp(
+                                datetime.datetime.now()
+                            ),
+                            "password": current_password,
+                        }
+                    )
                     self.collection.update_one(
                         {"email": self.email},
                         {
@@ -3587,7 +3681,7 @@ class GUI(customtkinter.CTk):
                         previous_passwords = user.get("previous_passwords")
                         passwords_list = []
                         for element in previous_passwords:
-                            passwords_list.append(element.get('password'))
+                            passwords_list.append(element.get("password"))
                         if self.password in passwords_list:
                             messagebox.showwarning(
                                 "Mili", "You used this password previously"
@@ -4241,7 +4335,7 @@ class GUI(customtkinter.CTk):
 
     # -----------------------------------------------------------------------------------------------------------
 
-    def weatherGUI(self, city):
+    def weatherGUI(self, city:str = None):
         def condition_to_url(condition):
             if condition.lower() == "partly cloudy":
                 url = "Data\\Images\\Weather\\Partly cloudy.png"
@@ -4790,6 +4884,62 @@ class GUI(customtkinter.CTk):
     # Mili Games
     # --------------------------------------------------------------------------------------------------------------
     def Games(self):
+        customtkinter.CTkLabel(
+            self.gameConsoleFrame,
+            text="  Games",
+            font=("Cooper Black", 50, "normal"),
+            image=self.ImageObject("Data\\Images\\Games\\gamepad.png", 50, 50),
+            compound="left",
+            anchor="center",
+            text_color="aqua",
+        ).pack(side=TOP, anchor=CENTER, pady=40)
+        gameIconsFrame = customtkinter.CTkFrame(
+            self.gameConsoleFrame,
+            fg_color="#252525",
+            border_color="#1ed760",
+            border_width=1,
+            corner_radius=15,
+        )
+        gameIconsFrame.pack(side=TOP, anchor=CENTER, pady=50)
+        customtkinter.CTkButton(
+            gameIconsFrame,
+            text="Tic Tac Toe",
+            font=("Sitka Small", 15, "bold"),
+            height=150,
+            image=self.ImageObject("Data\\Images\\Games\\tic-tac-toe.png", 80, 80),
+            compound="top",
+            anchor="center",
+            fg_color="#252525",
+            hover_color="#393939",
+            text_color="#1ed760",
+            command=self.tic_tac_toe,
+        ).grid(row=0, column=0, sticky="nsew", padx=(40, 20), pady=40)
+        customtkinter.CTkButton(
+            gameIconsFrame,
+            text="Quizard",
+            font=("Sitka Small", 15, "bold"),
+            height=150,
+            image=self.ImageObject("Data\\Images\\Games\\quiz.png", 80, 80),
+            compound="top",
+            anchor="center",
+            fg_color="#252525",
+            hover_color="#393939",
+            text_color="#1ed760",
+            command=self.quiz_game,
+        ).grid(row=0, column=1, sticky="nsew", padx=20, pady=40)
+        customtkinter.CTkButton(
+            gameIconsFrame,
+            text="Hangman",
+            font=("Sitka Small", 15, "bold"),
+            height=150,
+            image=self.ImageObject("Data\\Images\\Games\\quiz.png", 80, 80),
+            compound="top",
+            anchor="center",
+            fg_color="#252525",
+            hover_color="#393939",
+            text_color="#1ed760",
+        ).grid(row=0, column=2, sticky="nsew", padx=(20, 40), pady=40)
+
         self.showFrame(self.gameConsoleFrame)
 
     # Quiz Game
@@ -5124,108 +5274,195 @@ class GUI(customtkinter.CTk):
     # Tic Tac Toe Game
     # --------------------------------------------------------------------------------------------------------------
     def tic_tac_toe(self):
-        def b0_command():
-            turn = move.get()
-            if turn == 0:
-                b0.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
-            else:
-                b0.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+        def resetGame():
+            lock.acquire()
+            winnerLabel.configure(text="")
 
-        def b1_command():
-            turn = move.get()
-            if turn == 0:
-                b1.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
-            else:
-                b1.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+            for i in range(9):
+                board[i] = -1
 
-        def b2_command():
-            turn = move.get()
-            if turn == 0:
-                b2.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
-            else:
-                b2.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+            b0.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(0,)).start(),
+            )
+            b1.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(1,)).start(),
+            )
+            b2.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(2,)).start(),
+            )
+            b3.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(3,)).start(),
+            )
+            b4.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(4,)).start(),
+            )
+            b5.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(5,)).start(),
+            )
+            b6.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(6,)).start(),
+            )
+            b7.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(7,)).start(),
+            )
+            b8.configure(
+                text="",
+                command=lambda: Thread(target=move, args=(8,)).start(),
+            )
+            lock.release()
 
-        def b3_command():
-            turn = move.get()
-            if turn == 0:
-                b3.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
-            else:
-                b3.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+        def winnerEvent():
+            buttons = [b0, b1, b2, b3, b4, b5, b6, b7, b8]
+            remainingPositions = [x for x, value in enumerate(board) if value == -1]
+            for postion in remainingPositions:
+                buttons[postion].configure(command=None)
 
-        def b4_command():
-            turn = move.get()
-            if turn == 0:
-                b4.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
+        def move(index):
+            lock.acquire()
+            buttons = [b0, b1, b2, b3, b4, b5, b6, b7, b8]
+            if isBoardFull():
+                winnerLabel.configure(text="Draw!")
+                winnerEvent()
             else:
-                b4.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+                buttons[index].configure(text="O", text_color="#fff", command=None)
+                board[index] = 0
+                if isWinner(board, 0):
+                    winnerLabel.configure(text="O wins the game")
+                    winnerEvent()
+                else:
+                    if isBoardFull():
+                        winnerLabel.configure(text="Draw!")
+                        winnerEvent()
+                    else:
+                        time.sleep(0.4)
+                        computerTurn = computerMove()
+                        buttons[computerTurn].configure(
+                            text="X", text_color="aqua", command=None
+                        )
+                        board[computerTurn] = 1
+                        if isWinner(board, 1):
+                            winnerLabel.configure(text="X wins the game")
+                            winnerEvent()
+            lock.release()
 
-        def b5_command():
-            turn = move.get()
-            if turn == 0:
-                b5.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
+        def isWinner(boardCopy, value):
+            if (
+                (
+                    boardCopy[0] == value
+                    and boardCopy[1] == value
+                    and boardCopy[2] == value
+                )
+                or (
+                    boardCopy[3] == value
+                    and boardCopy[4] == value
+                    and boardCopy[5] == value
+                )
+                or (
+                    boardCopy[6] == value
+                    and boardCopy[7] == value
+                    and boardCopy[8] == value
+                )
+                or (
+                    boardCopy[0] == value
+                    and boardCopy[4] == value
+                    and boardCopy[8] == value
+                )
+                or (
+                    boardCopy[2] == value
+                    and boardCopy[4] == value
+                    and boardCopy[6] == value
+                )
+                or (
+                    boardCopy[0] == value
+                    and boardCopy[3] == value
+                    and boardCopy[6] == value
+                )
+                or (
+                    boardCopy[1] == value
+                    and boardCopy[4] == value
+                    and boardCopy[7] == value
+                )
+                or (
+                    boardCopy[2] == value
+                    and boardCopy[5] == value
+                    and boardCopy[8] == value
+                )
+            ):
+                return True
             else:
-                b5.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+                return False
 
-        def b6_command():
-            turn = move.get()
-            if turn == 0:
-                b6.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
+        def isBoardFull():
+            if board.count(-1) > 0:
+                return False
             else:
-                b6.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+                return True
 
-        def b7_command():
-            turn = move.get()
-            if turn == 0:
-                b7.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
-            else:
-                b7.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+        def computerMove():
+            # list containing all values -1
+            possibleMoves = [x for x, letter in enumerate(board) if letter == -1]
+            turn = 0
+            for let in [1, 0]:
+                for i in possibleMoves:
+                    boardCopy = board.copy()
+                    boardCopy[i] = let
+                    if isWinner(boardCopy, let):
+                        turn = i
+                        return turn
+            edgesMoves = []
+            for i in possibleMoves:
+                if i in (1, 3, 5, 7):
+                    edgesMoves.append(i)
 
-        def b8_command():
-            turn = move.get()
-            if turn == 0:
-                b8.configure(text="O", text_color="#fff", command=None)
-                turn = 1 - turn
-            else:
-                b8.configure(text="X", text_color="aqua", command=None)
-                turn = 1 - turn
-            move.set(turn)
+            if len(edgesMoves) > 0:
+                turn = randomMove(edgesMoves)
+                return turn
 
-        move = IntVar()
-        move.set(0)
+            if 4 in possibleMoves:
+                turn = 5
+                return turn
+
+            cornerMoves = []
+            for i in possibleMoves:
+                if i in (0, 2, 6, 8):
+                    cornerMoves.append(i)
+
+            if len(cornerMoves) > 0:
+                turn = randomMove(cornerMoves)
+                return turn
+
+        def randomMove(li):
+            import random
+
+            r = random.randrange(0, len(li))
+            return li[r]
+
+        lock = Lock()
+        board = [-1, -1, -1, -1, -1, -1, -1, -1, -1]
         line_style = ttk.Style()
         line_style.configure("Line.TSeparator", background="#1ed760")
         mainFrame = customtkinter.CTkFrame(self, fg_color="#252525", corner_radius=0)
         mainFrame.grid(row=0, column=0, sticky="nsew")
 
+        customtkinter.CTkLabel(
+            mainFrame,
+            text="Tic Tac Toe",
+            fg_color="#252525",
+            text_color="aqua",
+            font=("Cooper Black", 50, "normal"),
+        ).pack(side=TOP, anchor=CENTER, pady=30)
         tableFrame = customtkinter.CTkFrame(
             mainFrame, fg_color="#191919", corner_radius=10
         )
-        tableFrame.pack(side=TOP, anchor="center", pady=100)
-
+        tableFrame.pack(side=TOP, anchor="center")
         b0 = customtkinter.CTkButton(
             tableFrame,
             fg_color="#191919",
@@ -5235,7 +5472,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b0_command,
+            command=lambda: Thread(target=move, args=(0,)).start(),
         )
         b0.grid(row=0, column=0, padx=(70, 0), pady=(70, 0))
         ttk.Separator(tableFrame, orient="horizontal", style="Line.TSeparator").grid(
@@ -5253,7 +5490,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b1_command,
+            command=lambda: Thread(target=move, args=(1,)).start(),
         )
         b1.grid(row=0, column=2, pady=(70, 0))
         b2 = customtkinter.CTkButton(
@@ -5265,7 +5502,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b2_command,
+            command=lambda: Thread(target=move, args=(2,)).start(),
         )
         b2.grid(row=0, column=4, padx=(0, 70), pady=(70, 0))
         b3 = customtkinter.CTkButton(
@@ -5277,7 +5514,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b3_command,
+            command=lambda: Thread(target=move, args=(3,)).start(),
         )
         b3.grid(row=2, column=0, padx=(70, 0))
         b4 = customtkinter.CTkButton(
@@ -5289,7 +5526,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b4_command,
+            command=lambda: Thread(target=move, args=(4,)).start(),
         )
         b4.grid(row=2, column=2)
         b5 = customtkinter.CTkButton(
@@ -5301,7 +5538,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b5_command,
+            command=lambda: Thread(target=move, args=(5,)).start(),
         )
         b5.grid(row=2, column=4, padx=(0, 70))
         ttk.Separator(tableFrame, orient="horizontal", style="Line.TSeparator").grid(
@@ -5319,7 +5556,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b6_command,
+            command=lambda: Thread(target=move, args=(6,)).start(),
         )
         b6.grid(row=4, column=0, padx=(70, 0), pady=(0, 70))
         b7 = customtkinter.CTkButton(
@@ -5331,7 +5568,7 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b7_command,
+            command=lambda: Thread(target=move, args=(7,)).start(),
         )
         b7.grid(row=4, column=2, pady=(0, 70))
         b8 = customtkinter.CTkButton(
@@ -5343,24 +5580,32 @@ class GUI(customtkinter.CTk):
             hover=False,
             text="",
             font=("Cooper Black", 50, "normal"),
-            command=b8_command,
+            command=lambda: Thread(target=move, args=(8,)).start(),
         )
         b8.grid(row=4, column=4, padx=(0, 70), pady=(0, 70))
-
+        customtkinter.CTkButton(
+            mainFrame,
+            text="Reset",
+            font=("Sitka Small", 16, "bold"),
+            text_color="#111",
+            fg_color="#1ed760",
+            hover_color="#19b04f",
+            height=40,
+            width=130,
+            command=lambda: Thread(target=resetGame).start(),
+        ).pack(side=BOTTOM, anchor=CENTER, pady=(0, 40))
+        winnerLabel = customtkinter.CTkLabel(
+            mainFrame, text="", font=("Sitka Small", 25, "bold")
+        )
+        winnerLabel.pack(side=BOTTOM, anchor="center", pady=20)
         self.showFrame(mainFrame)
-
-
-    
 
 
 if __name__ == "__main__":
     app = GUI()
-    app.Profile()
+    # app.Profile()
 
     # app.Log()
-    # app.weatherGUI("haridwar")
-    # app.Games()
-    # app.tic_tac_toe()
-    # app.quiz_game()
-    # app.practice()
+    # app.weatherGUI()
+    app.Games()
     app.mainloop()

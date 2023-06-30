@@ -150,6 +150,6 @@ class APP(customtkinter.CTk):
 if __name__ == "__main__":
     app = APP()
     # 29.9475779, 78.0595927
-    app.currentLocation(29.945682525634766, 78.05656433105469)
-    # app.distanceAndRoute("distance between haridwar and rishikesh")
+    # app.currentLocation(29.945682525634766, 78.05656433105469)
+    app.distanceAndRoute("navigate me to haridwar")
     app.mainloop()

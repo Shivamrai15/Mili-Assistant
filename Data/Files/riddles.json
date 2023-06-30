@@ -1,0 +1,137 @@
+[
+   {
+      "riddle": "What has to be broken before you can use it?",
+      "answer": "An egg",
+      "url": "Data\\\\Sounds\\\\cracking egg.wav"
+   },
+   {
+      "riddle": "I\u2019m tall when I\u2019m young, and I\u2019m short when I\u2019m old. What am I?",
+      "answer": "A candle",
+      "url": "Data\\\\Sounds\\\\candle.wav"
+   },
+   {
+      "riddle": "What word looks the same upside down and backward?",
+      "answer": "SWIMS",
+      "url": "Data\\\\Sounds\\\\swims.wav"
+   },
+   {
+      "riddle": "What does through cities, over hills, and around towns, but never moves?",
+      "answer": "A road",
+      "url": "Data\\\\Sounds\\\\car_pass_by.wav"
+   },
+   {
+      "riddle": "What has a lot of keys but can't open any doors?",
+      "answer": "A piano",
+      "url": "Data\\\\Sounds\\\\piano.wav"
+   },
+   {
+      "riddle": "What has keys but no locks, and space but not room?",
+      "answer": "A computer",
+      "url": "Data\\\\Sounds\\\\typing.wav"
+   },
+   {
+      "riddle": "If you have one, you don't share it; if you share it, you don't have it. What is it?",
+      "answer": "A secret",
+      "url": "Data\\\\Sounds\\\\scream.wav"
+   },
+   {
+      "riddle": "What starts out tall, but the longer it stands, the shorter it grows?",
+      "answer": "A candle ",
+      "url": "Data\\\\Sounds\\\\lighting_a_fire.wav"
+   },
+   {
+      "riddle": "What loses it's head every morning, but gets it back at night?",
+      "answer": "A pillow",
+      "url": "Data\\\\Sounds\\\\male_snore.wav"
+   },
+   {
+      "riddle": "What do you call a bear without an ear?",
+      "answer": "B'",
+      "url": "Data\\\\Sounds\\\\bear.wav"
+   },
+   {
+      "riddle": "What has 13 hearts, but no other organ?",
+      "answer": "A deck of playing cards",
+      "url": "Data\\\\Sounds\\\\shuffle_card.wav"
+   },
+   {
+      "riddle": "What five-letter word  becomes shorter when you add two letters to it?",
+      "answer": "Short",
+      "url": "Data\\\\Sounds\\\\funny_sound _effect.wav"
+   },
+   {
+      "riddle": "What has two hands, a round face, always runs, but stays in place?",
+      "answer": "A clock",
+      "url": "Data\\\\Sounds\\\\clock.wav"
+   },
+   {
+      "riddle": "Professor Blue lives in the blue house, Mr. Pink lives in the pink house, and Doctor Brown lives in the brown house. Who lives in the white house?",
+      "answer": "The president of the United States of America",
+      "url": "Data\\\\Sounds\\\\funny_sound _effect.wav"
+   },
+   {
+      "riddle": "What starts with a P and ends with an E and has a million of letters in it?",
+      "answer": "A post office!",
+      "url": "Data\\\\Sounds\\\\paper-flutter.wav"
+   },
+   {
+      "riddle": "What gets wetter as it dries?",
+      "answer": "A towel",
+      "url": "Data\\\\Sounds\\\\toilet_flushing.wav"
+   },
+   {
+      "riddle": "What does December have that other months don't have?",
+      "answer": "The letter D",
+      "url": "Data\\\\Sounds\\\\funny_sound _effect.wav"
+   },
+   {
+      "riddle": "What has hands but can't clap?",
+      "answer": "A clock",
+      "url": "Data\\\\Sounds\\\\clock.wav"
+   },
+   {
+      "riddle": "The more there is the less you see\u2026.",
+      "answer": "Darkness",
+      "url": "Data\\\\Sounds\\\\dark.wav"
+   },
+   {
+      "riddle": "What can be cracked, made, told, and played?",
+      "answer": "A penny!",
+      "url": "Data\\\\Sounds\\\\funny_sound _effect.wav"
+   },
+   {
+      "riddle": "What question can you never answer yes to?",
+      "answer": "Are you asleep yet?",
+      "url": "Data\\\\Sounds\\\\male_snore.wav"
+   },
+   {
+      "riddle": "I\u2019m light as a feather, yet the strongest person can\u2019t hold me for five minutes. What am I?",
+      "answer": "Your breath",
+      "url": "Data\\\\Sounds\\\\breathing.wav"
+   },
+   {
+      "riddle": "What runs, but never walks. Murmurs, but never talks. Has a bed, but never sleeps. And has a mouth, but never eats?",
+      "answer": "A river",
+      "url": "Data\\\\Sounds\\\\river flow.wav"
+   },
+   {
+      "riddle": "What is so fragile that saying its name breaks it?",
+      "answer": "Silence",
+      "url": "Data\\\\Sounds\\\\silence.wav"
+   },
+   {
+      "riddle": "What has a neck but has no head?",
+      "answer": "Guitar",
+      "url": "Data\\\\Sounds\\\\guitar.wav"
+   },
+   {
+      "riddle": "What has many hearts but no other organs?",
+      "answer": "A deck of cards",
+      "url": "Data\\\\Sounds\\\\heartbeat.wav"
+   },
+   {
+      "riddle": "What has a head and a tail but no body?",
+      "answer": "A coin",
+      "url": "Data\\\\Sounds\\\\coin drop.wav"
+   }
+]
