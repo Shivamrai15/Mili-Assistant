@@ -706,16 +706,13 @@ class Secret:
         nlp = spacy.load("en_core_web_sm")
         doc = nlp(self.query_secret)
         query = self.query_secret.split()
-        i = 0
-        for token in doc:
+        for i, token in enumerate(doc):
             if token.text in pronouns:
                 if token.dep_ == "nsubj" and token.pos_ == "PRON":
-                    query[i] = pronounsFirstPersonSubject[token.text]
+                    query[i] = pronounsFirstPersonSubject.get(token.text)
                 else:
-                    query[i] = pronounsFirstPersonObject[token.text]
-                i += 1
-            else:
-                i += 1
+                    query[i] = pronounsFirstPersonObject.get(token.text)
+                    
         query = " ".join(query)
         query = removeGrammaticalErrors(query)
         current_date = datetime.strftime(datetime.now(), "%d %B")
