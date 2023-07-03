@@ -3,7 +3,6 @@ import json
 import time
 import pickle
 import random
-import zxcvbn
 import pathlib
 import zipfile
 import pymongo
@@ -13,7 +12,6 @@ import requests
 import webbrowser
 import customtkinter
 from tkinter import *
-import pwnedpasswords
 from PIL import Image
 from tkinter import ttk
 from location import GPS
@@ -25,6 +23,7 @@ from threading import Thread, Lock
 from emailMessage import MailToUser
 from functions import UserCredentials
 from functions import CredentialManager
+from passlib.context import CryptContext
 from tkinter import messagebox, filedialog
 from functions import device_name, device_Model
 from location import ip_based_location, reverseGeocoding
@@ -32,6 +31,7 @@ from location import ip_based_location, reverseGeocoding
 
 # Current directory of the application
 application_directory = os.getcwd()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # Class to download the file
@@ -117,41 +117,18 @@ class Downloaded_Data:
             return False
 
 
-# class to check the strength and pwnage of the user password
-# ---------------------------------------------------------------------------------------------------
-class Password:
-    def __init__(self, password):
-        self.password = password
-        self.pwned = None
-        self.crack_time = None
+# ---------------------------------------------------------------------------------------------------------
 
-    def pwnage(self):
-        try:
-            self.pwned = pwnedpasswords.check(self.password)
-        except:
-            self.pwned = None
 
-    def zxcvbnApi(self):
-        try:
-            result = zxcvbn.zxcvbn(self.password)
-            response = {
-                "crack_time": result.get("crack_times_display").get(
-                    "offline_slow_hashing_1e4_per_second"
-                ),
-                "warning": result.get("feedback").get("warning"),
-                "suggestions": result.get("feedback").get("suggestions"),
-            }
-            self.crack_time = response
-        except:
-            self.crack_time = None
+# Class to hash the password and verify the hashed password
+# ---------------------------------------------------------------------------------------------------------
+class Hash:
+    def generateHashedPassword(password: str) -> str:
+        hashed_password = pwd_context.hash(password)
+        return hashed_password
 
-    @lru_cache(maxsize=10)
-    def estimate_crack_time(self):
-        thread1 = Thread(target=self.pwnage)
-        thread2 = Thread(target=self.zxcvbnApi)
-        thread1.start(), thread2.start()
-        thread1.join(), thread2.join()
-        return (self.crack_time, self.pwned)
+    def verifyCredential(hashedPassword: str, userPassword: str):
+        return pwd_context.verify(userPassword, hashedPassword)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -165,7 +142,15 @@ class Cache:
         self.path = os.getcwd()
         self.cacheFiles = []
         self.extensions = (".cache", ".json", ".tmp", ".pyc", ".bin")
-        self.protectedFiles = "Credentials.cache"
+        self.protectedFiles = (
+            "Credentials.cache",
+            "complements.json",
+            "Grocery items.bin",
+            "mili_rap_songs.json",
+            "mili_songs.json",
+            "poems.json",
+            "riddles.json",
+        )
         self.temporaryFiles = ("CAPTCHA.png", ".cache", ".google-cookie")
         self.cacheMemory = 0
 
@@ -390,7 +375,7 @@ class GUI(customtkinter.CTk):
                     thread.join()
 
             def verify_credentials(self):
-                if download_userID.get() != password:
+                if not Hash.verifyCredential(password, download_userID.get()):
                     messagebox.showwarning(
                         "Mili", "The password you entered is invalid. Please try again."
                     )
@@ -676,21 +661,32 @@ class GUI(customtkinter.CTk):
                         title="Mili",
                         message="The password fields for this app are unfilled.\nPlease enter a password in both fields to proceed.",
                     )
+                    resetButtonVariable.set("Reset")
                 else:
-                    if current_password != password:
-                        messagebox.showerror(
-                            title="Mili",
-                            message="Please check your current password and try again.",
-                        )
-                    elif (
-                        new_password in password_list
-                        or current_password == new_password
-                    ):
+                    if current_password == new_password:
                         messagebox.showerror(
                             title="Mili",
                             message="Your password cannot be reused. Please choose a new password.",
                         )
+                        resetButtonVariable.set("Reset")
+                        return None
+                    elif not Hash.verifyCredential(password, current_password):
+                        messagebox.showerror(
+                            title="Mili",
+                            message="Please check your current password and try again.",
+                        )
+                        resetButtonVariable.set("Reset")
+                        return None
+                    for pwd in password_list:
+                        if Hash.verifyCredential(pwd, new_password):
+                            messagebox.showerror(
+                                title="Mili",
+                                message="Your password cannot be reused. Please choose a new password.",
+                            )
+                            resetButtonVariable.set("Reset")
+                            return None
                     else:
+                        new_hashed_password = Hash.generateHashedPassword(new_password)
                         previous_passwords.append(
                             {
                                 "timestamp": datetime.datetime.timestamp(
@@ -703,12 +699,12 @@ class GUI(customtkinter.CTk):
                             {"email": gmail},
                             {
                                 "$set": {
-                                    "password": new_password,
+                                    "password": new_hashed_password,
                                     "previous_passwords": previous_passwords,
                                 }
                             },
                         )
-                        CredentialManager().write_credential(gmail, new_password)
+                        CredentialManager().write_credential(gmail, new_hashed_password)
                         resetUpdateFrame.tkraise()
                         resetCurrentPasswordEntry.delete(0, END)
                         resetNewPasswordEntry.delete(0, END)
@@ -743,7 +739,7 @@ class GUI(customtkinter.CTk):
                 value = agreeCheckBoxVar.get()
                 if value == 0:
                     messagebox.showinfo("Mili", "Please accept self declaration")
-                elif password != enteredPassword:
+                elif not Hash.verifyCredential(password, enteredPassword):
                     messagebox.showinfo("Mili", "You have entered incorrect password")
                 else:
                     self.deleteAccount()
@@ -779,9 +775,9 @@ class GUI(customtkinter.CTk):
                     messagebox.showinfo(
                         "Mili", "You have sucessfully updated your profile"
                     )
-                    if gender == "Male":
+                    if self.gender == "Male":
                         genderIcon = maleGenderIcon
-                    elif gender == "Female":
+                    elif self.gender == "Female":
                         genderIcon = femaleGenderIcon
                     else:
                         genderIcon = othersGenderIcon
@@ -863,8 +859,8 @@ class GUI(customtkinter.CTk):
                 self.showFrame(deleteAccountFrame)
             elif mode == "Settings":
                 self.showFrame(settingsFrame)
-            elif mode == "Password":
-                self.showFrame(passwordFrame)
+            elif mode == "Reset Password":
+                self.showFrame(resetPasswordFrame)
             elif mode == "Updates":
                 self.showFrame(updatesFrame)
 
@@ -938,11 +934,6 @@ class GUI(customtkinter.CTk):
             self.profileFrame, fg_color="#252525", corner_radius=0
         )
         settingsFrame.grid(row=0, column=1, sticky="nsew")
-
-        passwordFrame = customtkinter.CTkFrame(
-            self.profileFrame, fg_color="#252525", corner_radius=0
-        )
-        passwordFrame.grid(row=0, column=1, sticky="nsew")
 
         updatesFrame = customtkinter.CTkFrame(
             self.profileFrame, fg_color="#252525", corner_radius=0
@@ -2289,8 +2280,8 @@ class GUI(customtkinter.CTk):
             securityMainFrame,
             text="Navigate to the location",
             text_color="#1ed760",
-            height = 130,
-            width = 200,
+            height=130,
+            width=200,
             image=self.ImageObject("Data\\Images\\GUI\\compass.png", 70, 70),
             font=("Sitka Small", 13, "bold"),
             fg_color="#202020",
@@ -2402,11 +2393,11 @@ class GUI(customtkinter.CTk):
             button_hover_color="#404040",
             values=[
                 "Logout",
-                "Password",
                 "Edit Profile",
+                "Reset Password",
                 "Delete Account",
-                "Settings",
                 "Updates",
+                "Settings",
             ],
             font=("Sitka Small", 14, "normal"),
             dropdown_font=("Sitka Small", 14, "normal"),
@@ -2986,152 +2977,6 @@ class GUI(customtkinter.CTk):
         ).grid(row=11, column=0, sticky="w", padx=60)
         # --------------------------------------------------------------------------------------------------
 
-        # Password Frame
-        # --------------------------------------------------------------------------------------------------
-        analysed_password = Password(password).estimate_crack_time()
-        pwned = analysed_password[1]
-        crack_time = analysed_password[0]
-        if crack_time is not None:
-            warning = crack_time.get("warning")
-            suggetion = crack_time.get("suggestions")
-        else:
-            warning = None
-            suggetion = None
-        customtkinter.CTkLabel(
-            passwordFrame,
-            text="",
-            fg_color="#252525",
-            text_color="#fff",
-            compound="left",
-        ).grid(row=0, column=0, columnspan=2, sticky="n", padx=465)
-        customtkinter.CTkLabel(
-            passwordFrame,
-            text="How Secure Is My Password?",
-            fg_color="#252525",
-            font=("Cooper Black", 20, "normal"),
-            text_color="#fff",
-            compound="left",
-        ).grid(row=1, column=0, columnspan=2, sticky="n", pady=(0, 35))
-        passwordHeaderFrame = customtkinter.CTkFrame(
-            passwordFrame, corner_radius=10, border_width=0
-        )
-        passwordHeaderFrame.grid(row=2, column=0, columnspan=2, sticky="n")
-        if pwned != 0 and pwned is not None:
-            passwordHeaderFrame.configure(fg_color="#0f4d92")
-            customtkinter.CTkLabel(
-                passwordHeaderFrame,
-                text="Oh no — pwned!",
-                fg_color="#0f4d92",
-                text_color="#fff",
-                font=("Sitka Small", 16, "bold"),
-            ).grid(row=0, column=0, sticky="n", pady=(5, 0))
-            customtkinter.CTkLabel(
-                passwordHeaderFrame,
-                text=f"This password has been seen {pwned} times before",
-                fg_color="#0f4d92",
-                text_color="#fff",
-                font=("Sitka Small", 16, "bold"),
-            ).grid(row=1, column=0, sticky="n", padx=10)
-            customtkinter.CTkLabel(
-                passwordHeaderFrame,
-                text=f"This password has previously appeared in a data breach and should never be used. So change it.",
-                fg_color="#0f4d92",
-                text_color="#fff",
-                font=("Sitka Small", 13, "normal"),
-            ).grid(row=2, column=0, sticky="n", padx=10, pady=(0, 5))
-        else:
-            passwordHeaderFrame.configure(fg_color="#228b22")
-            customtkinter.CTkLabel(
-                passwordHeaderFrame,
-                text="Good news — no pwnage found!",
-                fg_color="#228b22",
-                text_color="#fff",
-                font=("Sitka Small", 16, "bold"),
-            ).grid(row=0, column=0, sticky="n", pady=(10, 0))
-            customtkinter.CTkLabel(
-                passwordHeaderFrame,
-                text=f"This password wasn't found in any of the Pwned Passwords loaded into Have I Been Pwned.",
-                fg_color="#228b22",
-                text_color="#fff",
-                font=("Sitka Small", 13, "bold"),
-            ).grid(row=1, column=0, sticky="n", padx=10, pady=(0, 10))
-
-        ptext = "Pwned Passwords refer to a collection of actual passwords from various data breaches, amounting to hundreds of millions in number. Due to this unauthorized exposure, these passwords should not be used further as they pose a significant risk of being exploited to gain unauthorized access to other user accounts."
-        customtkinter.CTkLabel(
-            passwordFrame,
-            text=ptext,
-            wraplength=600,
-            fg_color="#252525",
-            text_color="#7f7f7f",
-            font=("Sitka Small", 11, "italic"),
-        ).grid(row=3, column=0, sticky="n", columnspan=2, pady=10)
-        customtkinter.CTkLabel(
-            passwordFrame,
-            text="It would take a computer about",
-            fg_color="#252525",
-            text_color="#fff",
-            font=("Sitka Small", 13, "normal"),
-        ).grid(row=4, column=0, columnspan=2, sticky="n", pady=(35, 0))
-        customtkinter.CTkLabel(
-            passwordFrame,
-            text=f"{crack_time.get('crack_time')}",
-            fg_color="#252525",
-            text_color="#fff",
-            font=("Sitka Small", 18, "bold"),
-        ).grid(row=5, column=0, columnspan=2, sticky="n")
-        customtkinter.CTkLabel(
-            passwordFrame,
-            text="to crack your password",
-            fg_color="#252525",
-            text_color="#fff",
-            font=("Sitka Small", 13, "normal"),
-        ).grid(row=6, column=0, columnspan=2, sticky="n", pady=(0, 20))
-        if warning != "" and warning is not None:
-            customtkinter.CTkLabel(
-                passwordFrame,
-                text="Warning     ",
-                fg_color="#252525",
-                text_color="red",
-                font=("Sitka Small", 14, "bold"),
-            ).grid(row=7, column=0, sticky="e")
-            customtkinter.CTkLabel(
-                passwordFrame,
-                text=f"{warning}",
-                fg_color="#252525",
-                text_color="#fff",
-                font=("Sitka Small", 14, "normal"),
-            ).grid(row=7, column=1, sticky="w", padx=(15, 0))
-        if len(suggetion) != 0 and suggetion is not None:
-            customtkinter.CTkLabel(
-                passwordFrame,
-                text="Suggestions",
-                fg_color="#252525",
-                text_color="#228b22",
-                font=("Sitka Small", 14, "bold"),
-            ).grid(row=8, column=0, sticky="e")
-            customtkinter.CTkLabel(
-                passwordFrame,
-                text=f"{suggetion[0]}",
-                fg_color="#252525",
-                text_color="#fff",
-                font=("Sitka Small", 14, "normal"),
-            ).grid(row=8, column=1, sticky="w", padx=(15, 0))
-
-        customtkinter.CTkButton(
-            passwordFrame,
-            height=40,
-            width=180,
-            text="Change Password",
-            font=("Sitka Small", 15, "bold"),
-            border_width=0,
-            corner_radius=5,
-            fg_color="#1ed760",
-            text_color="#111",
-            hover_color="#19b04f",
-            command=lambda: self.showFrame(resetPasswordFrame),
-        ).grid(row=9, column=0, columnspan=2, sticky="n", pady=40)
-        # --------------------------------------------------------------------------------------------------
-
         # Update Frame
         # --------------------------------------------------------------------------------------------------
         updateEmailVar = IntVar()
@@ -3511,8 +3356,11 @@ class GUI(customtkinter.CTk):
                     userPassword = self.user(username)
                     if userPassword is None:
                         messagebox.showwarning("Mili", "User does not exist")
-                    elif userPassword.get("password") != password:
+                    elif not Hash.verifyCredential(
+                        userPassword.get("password"), password
+                    ):
                         messagebox.showwarning("Mili", "Invalid password. Try again!")
+                        return None
                     else:
                         progress.grid(row=0, column=0, sticky="nsew", columnspan=2)
                         progress.start()
@@ -3527,6 +3375,7 @@ class GUI(customtkinter.CTk):
             def __init__(self):
                 self.email = None
                 self.password = None
+                self.hashed_pwd = None
                 self.OTP = None
                 self.codeVar = StringVar()
                 self.codeVar.set("Resend new code")
@@ -3656,7 +3505,7 @@ class GUI(customtkinter.CTk):
                         {"email": self.email},
                         {
                             "$set": {
-                                "password": self.password,
+                                "password": self.hashed_pwd,
                                 "previous_passwords": previous_passwords,
                             }
                         },
@@ -3679,13 +3528,22 @@ class GUI(customtkinter.CTk):
                         messagebox.showwarning("Mili", "User does't exist")
                     else:
                         previous_passwords = user.get("previous_passwords")
+
+                        self.hashed_pwd = Hash.generateHashedPassword(self.password)
                         passwords_list = []
                         for element in previous_passwords:
                             passwords_list.append(element.get("password"))
-                        if self.password in passwords_list:
+                        if Hash.verifyCredential(user.get("password"), self.password):
                             messagebox.showwarning(
                                 "Mili", "You used this password previously"
                             )
+                            return None
+                        for pwd in passwords_list:
+                            if Hash.verifyCredential(pwd, self.password):
+                                messagebox.showwarning(
+                                    "Mili", "You used this password previously"
+                                )
+                                return None
                         else:
                             self.OTP = randint(111111, 999999)
                             self.emailAddress.configure(text=self.email)
@@ -3702,6 +3560,7 @@ class GUI(customtkinter.CTk):
                 self.email = None
                 self.data = None
                 self.OTP = None
+                self.hashed_pwd = None
                 self.codeVar = StringVar()
                 self.codeVar.set("Resend new code")
                 self.url = Encryption(
@@ -3907,12 +3766,13 @@ class GUI(customtkinter.CTk):
                         self.emailAddress.configure(text=self.email)
                         thread = Thread(target=self.sendOTP())
                         thread.start()
+                        self.hashed_pwd = Hash.generateHashedPassword(password)
                         self.showFrame(frame6)
                         self.data = {
                             "name": full_name,
                             "phone number": "9557657500",
                             "email": self.email,
-                            "password": password,
+                            "password": self.hashed_pwd,
                             "gender": gender,
                             "DOB": userDOB,
                             "previous_passwords": [],
@@ -4335,7 +4195,7 @@ class GUI(customtkinter.CTk):
 
     # -----------------------------------------------------------------------------------------------------------
 
-    def weatherGUI(self, city:str = None):
+    def weatherGUI(self, city: str = None):
         def condition_to_url(condition):
             if condition.lower() == "partly cloudy":
                 url = "Data\\Images\\Weather\\Partly cloudy.png"
@@ -4896,8 +4756,7 @@ class GUI(customtkinter.CTk):
         gameIconsFrame = customtkinter.CTkFrame(
             self.gameConsoleFrame,
             fg_color="#252525",
-            border_color="#1ed760",
-            border_width=1,
+            border_width=0,
             corner_radius=15,
         )
         gameIconsFrame.pack(side=TOP, anchor=CENTER, pady=50)
@@ -4908,6 +4767,9 @@ class GUI(customtkinter.CTk):
             height=150,
             image=self.ImageObject("Data\\Images\\Games\\tic-tac-toe.png", 80, 80),
             compound="top",
+            border_width=1,
+            corner_radius=10,
+            border_color="#1ed760",
             anchor="center",
             fg_color="#252525",
             hover_color="#393939",
@@ -4922,6 +4784,9 @@ class GUI(customtkinter.CTk):
             image=self.ImageObject("Data\\Images\\Games\\quiz.png", 80, 80),
             compound="top",
             anchor="center",
+            border_width=1,
+            corner_radius=10,
+            border_color="#1ed760",
             fg_color="#252525",
             hover_color="#393939",
             text_color="#1ed760",
@@ -4935,6 +4800,9 @@ class GUI(customtkinter.CTk):
             image=self.ImageObject("Data\\Images\\Games\\quiz.png", 80, 80),
             compound="top",
             anchor="center",
+            border_width=1,
+            corner_radius=10,
+            border_color="#1ed760",
             fg_color="#252525",
             hover_color="#393939",
             text_color="#1ed760",
@@ -5606,6 +5474,6 @@ if __name__ == "__main__":
     # app.Profile()
 
     # app.Log()
-    # app.weatherGUI()
-    app.Games()
+    app.weatherGUI()
+    # app.Games()
     app.mainloop()

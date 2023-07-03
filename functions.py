@@ -7,7 +7,6 @@ import subprocess
 import pyscreenshot
 from gtts import gTTS
 from win32 import win32cred
-# from slugify import slugify
 from threading import Thread
 from datetime import datetime
 from tkinter import messagebox
