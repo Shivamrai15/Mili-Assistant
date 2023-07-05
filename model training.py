@@ -5,6 +5,7 @@ import nltk
 import pickle
 
 from nltk.stem import WordNetLemmatizer
+
 lemmatizer = WordNetLemmatizer()
 
 with open("Data\\Files\\dataset.json", "r") as file:
@@ -15,15 +16,15 @@ labels = []
 docs_x = []
 docs_y = []
 
-for intent in data['intents']:
-    for pattern in intent['patterns']:
+for intent in data["intents"]:
+    for pattern in intent["patterns"]:
         wds = nltk.word_tokenize(pattern)
         words.extend(wds)
         docs_x.append(wds)
-        docs_y.append(intent['tag'])
+        docs_y.append(intent["tag"])
 
-        if intent['tag'] not in labels:
-            labels.append(intent['tag'])
+        if intent["tag"] not in labels:
+            labels.append(intent["tag"])
 
 words = [lemmatizer.lemmatize(w.lower()) for w in words]
 words = sorted(list(set(words)))
