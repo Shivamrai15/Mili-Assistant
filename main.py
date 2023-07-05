@@ -517,14 +517,10 @@ def availableWifiNetwork():
 # class Song Media
 # -------------------------------------------------------------------------------------------------------
 class Media:
-    def __init__(self, query):
-        self.query = query
-
     # playing songs from youtube music
-    def youTubeMuisc(self):
-        song_name = ""
+    def youTubeMusic(query: str):
         try:
-            query_string = urllib.parse.urlencode({"search_query": song_name})
+            query_string = urllib.parse.urlencode({"search_query": query})
             formatUrl = urllib.request.urlopen(
                 "https://www.youtube.com/search?" + query_string
             )
@@ -534,16 +530,14 @@ class Media:
                 + "{}".format(search_results[0])
                 + "&feature=share"
             )
-            speak(f"Ok, asking Youtube Music to play {song_name}")
+            speak(f"Ok, asking Youtube Music to play the song")
             webbrowser.open_new_tab(music_link)
-        except Exception as e:
-            SearchQuery(song_name).googleResult()
+        except:
+            SearchQuery(query).googleResult()
 
     # playing media from youtube
-    def youTube(self):
-        if "play" in self.query:
-            query = self.query.replace("play", "")
-        query = query.strip()
+    def youTube(query: str):
+        query = query.replace("play", "").strip()
         try:
             query_string = urllib.parse.urlencode({"search_query": query})
             formatUrl = urllib.request.urlopen(
@@ -555,7 +549,7 @@ class Media:
             )
             speak("Ok, asking Youtube to play")
             webbrowser.open_new_tab(music_link)
-        except Exception as e:
+        except:
             SearchQuery(query).googleResult()
 
 
@@ -1229,21 +1223,30 @@ def AI_models(query: str):
     wit_response = wit_model(query)
     if wit_response is False:
         if "play" in query and "song" in query:
-            pass
+            Media.youTubeMusic(query)
         elif "play" in query:
-            pass
+            Media.youTube(query)
         elif "open" in query:
-            pass
+            openAppWebsite(query)
         else:
             trained_response = trained_mode_response(query)
             if trained_response is False:
-                pass
+                bard_response = bardResponse(query)
+                print(bard_response)
+                bard_response = bard_response.split("\n")[0]
+                onlySpeak(bard_response)
 
 
 if __name__ == "__main__":
-    flag = True
-    while flag is not False:
-        query = input("You : ")
-        print()
-        AI_models(query)
+    if __ID__ is None and __PASSWORD__ is None:
+        interface = GUI()
+        interface.Log()
+        interface.mainloop()
+        del interface
+    else:
         flag = True
+        while flag is not False:
+            query = input("You : ")
+            print()
+            AI_models(query)
+            flag = True
