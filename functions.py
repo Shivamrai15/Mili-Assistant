@@ -5,17 +5,14 @@ import requests
 import platform
 import subprocess
 import pyscreenshot
-from gtts import gTTS
 from win32 import win32cred
 from threading import Thread
 from datetime import datetime
 from tkinter import messagebox
 from functools import lru_cache
-from playsound import playsound
 from encryption import Encryption
 from location import geoLogicalCoordinate, GPS
-from deep_translator import GoogleTranslator
-from googletrans import LANGUAGES, LANGCODES
+
 
 
 application_directory = os.getcwd()
@@ -249,15 +246,6 @@ class ScreenShot:
 # ------------------------------------------------------------------------------------------------------------
 
 
-# This function returns a list of available bluetooth devices
-# ------------------------------------------------------------------------------------------------------------
-# def available_bluetooth_devices() -> list:
-#     # speak("Scanning for Bluetooth devices") before calling function
-#     nearby_devices = bluetooth.discover_devices(lookup_names=True)
-#     return nearby_devices
-# ------------------------------------------------------------------------------------------------------------
-
-
 # This function returns the name of the windows device
 # ------------------------------------------------------------------------------------------------------------
 def device_name() -> str:
@@ -276,91 +264,8 @@ def device_Model() -> str:
     device_name = platform.node()
     return device_name
 
-
 # ------------------------------------------------------------------------------------------------------------
 
-
-# This class translate queries into the specified language.
-# ------------------------------------------------------------------------------------------------------------
-class Translate:
-    def __init__(self, query) -> None:
-        self.query = query
-        self.processed_text = None
-        self.detected_lang = None
-
-    # This function is used to extract the specified language and eliminate any language-related entities from the query.
-    def language_detection(self, query) -> list:
-        exist_language = []
-        languages = LANGUAGES.values()
-        for word in query:
-            if word in languages:
-                exist_language.append(word)
-        if len(exist_language) != 0:
-            query.reverse()
-            lang_idx = query.index(exist_language[-1])
-            query = query[lang_idx + 1 :]
-            query.reverse()
-            self.processed_text = query.copy()
-            self.detected_lang = exist_language[-1]
-
-    # This function is used to process the query and remove irrelevant substrings.
-    def text_processing(self):
-        trans_idx, mean_idx, key_idx, flag = None, None, None, False
-        query = self.query.split()
-        thread = Thread(target=self.language_detection, args=(query.copy(),))
-        thread.start()
-        if "translate" in query:
-            trans_idx = query.index("translate")
-        if "meaning" in query:
-            mean_idx = query.index("meaning")
-        if trans_idx is not None and mean_idx is not None:
-            if trans_idx > mean_idx:
-                key_idx = mean_idx
-                flag = True
-            else:
-                key_idx = trans_idx
-        elif trans_idx is not None:
-            key_idx = trans_idx
-        else:
-            key_idx = mean_idx
-            flag = True
-
-        thread.join()
-        self.processed_text = self.processed_text[key_idx + 1 :]
-        if self.processed_text[-1] == "in":
-            self.processed_text.pop(-1)
-        elif self.processed_text[-1] == "the" and self.processed_text[-2] == "in":
-            self.processed_text.pop(-1)
-            self.processed_text.pop(-1)
-        if flag is True and self.processed_text[0] == "of":
-            self.processed_text.pop(0)
-        self.processed_text = " ".join(self.processed_text)
-
-    def google_translate(self):
-        self.text_processing()
-        text, language = self.processed_text, self.detected_lang
-        translated = GoogleTranslator(source="auto", target=language).translate(
-            text=text
-        )
-        langCode = LANGCODES.get(language)
-        print(translated)
-        if language != "english":
-            # result = slugify(translated)
-            # result = result.replace("-", " ").capitalize()
-            try:
-                tts = gTTS(translated, lang=langCode)
-                tts.save(application_directory + "\\Data\\Cache\\voiceCache.mp3")
-                # print(result)
-                playsound(application_directory + "\\Data\\Cache\\voiceCache.mp3")
-                os.remove(application_directory + "\\Data\\Cache\\voiceCache.mp3")
-            except Exception as e:
-                print(e)
-                # return True, result
-        else:
-            return False, translated
-
-
-# ------------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     # Translate("can you translate what is the meaning of love in hindi").google_translate()

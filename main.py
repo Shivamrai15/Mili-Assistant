@@ -26,6 +26,8 @@ from random import randint, sample
 from gnewsclient import gnewsclient
 from gingerit.gingerit import GingerIt
 from functions import CredentialManager
+from translate import Translate
+
 
 # importing interfaces
 # ------------------------------------------------------------------------------------------------------
@@ -897,16 +899,15 @@ def wit_model(query):
         flag = True
         language = entities["language:language"]
         body = entities["wit$message_body:message_body"]
-        if len(language) > 1:
+        if len(language) > 1 or len(body) > 1:
             flag = False
-            # translate function
-        elif len(body) > 1:
-            flag = False
-            # translate function
+            Translate(query, flag).google_translate()
         else:
+            flag = True
             language = language[0]["value"]
             body = body[0]["value"]
-            # translate function
+            query = {"body": body, "language": language}
+            Translate(query, flag).google_translate()
         return True
     elif intent == "wit$get_weather":
         try:
@@ -950,7 +951,9 @@ def AI_models(query: str):
 
 
 if __name__ == "__main__":
-    while True:
+    flag = True
+    while flag is not False:
         query = input("You : ")
         print()
         AI_models(query)
+        flag = True
