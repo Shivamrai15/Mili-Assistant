@@ -27,33 +27,52 @@ from gnewsclient import gnewsclient
 from gingerit.gingerit import GingerIt
 from functions import CredentialManager
 
-# -------------------------------------------------------------------------------------------------------
+# importing interfaces
+# ------------------------------------------------------------------------------------------------------
+from app import GUI
+from map import APP
 
+# ------------------------------------------------------------------------------------------------------
+
+
+# importing AI models
+# ------------------------------------------------------------------------------------------------------
+from trained_model import chat
+from bard_model import bardResponse
+from wit_model import witResponse
+
+# ------------------------------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------------------------------
 
 # Current directory of the application
 application_directory = os.getcwd()
+
+# object of the interface
+map_interface = APP()
 
 
 # Setting database connection
 # -------------------------------------------------------------------------------------------------------
 __ID__, __PASSWORD__ = CredentialManager().read_credential()
-__database_url__  = Encryption(
-                b"gAAAAABkeM77CniuvGNLTxhTXcvvxS4482UUd-YvStyomao17R01SW_7UrXKCjvUfjwrmYRZ-YEztP6Xpb02tF3mDqH42ECzrMYiw2d6hcw2ZeZuIQXzTNvl-ylfk39vReUEseO0KnAIsnkcdJQeHOTvhjufWM5yYEAShBSZ6g_E3qqcy9pWhlA="
-            ).decrypt_text()
-__client__  = MongoClient(__database_url__)
+__database_url__ = Encryption(
+    b"gAAAAABkeM77CniuvGNLTxhTXcvvxS4482UUd-YvStyomao17R01SW_7UrXKCjvUfjwrmYRZ-YEztP6Xpb02tF3mDqH42ECzrMYiw2d6hcw2ZeZuIQXzTNvl-ylfk39vReUEseO0KnAIsnkcdJQeHOTvhjufWM5yYEAShBSZ6g_E3qqcy9pWhlA="
+).decrypt_text()
+__client__ = MongoClient(__database_url__)
 __database__ = __client__["Assistant"]
-__collection__ = __database__["User Credentials"] 
+__collection__ = __database__["User Credentials"]
 
 
 # -------------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------------------------
 
-engine = pyttsx3.init('sapi5')
-voices = engine.getProperty('voices')
-engine.setProperty('volume', 1.0)
-engine.setProperty('rate', 140)
-engine.setProperty('voice', voices[1].id)
+engine = pyttsx3.init("sapi5")
+voices = engine.getProperty("voices")
+engine.setProperty("volume", 1.0)
+engine.setProperty("rate", 140)
+engine.setProperty("voice", voices[1].id)
 
 # -------------------------------------------------------------------------------------------------------
 
@@ -61,9 +80,12 @@ engine.setProperty('voice', voices[1].id)
 # -------------------------------------------------------------------------------------------------------
 def defaultMiliGeneralSettings():
     defaultSettings = open(
-        application_directory+"\\Data\\Cache\\Mili Settings.settings", 'rb')
+        application_directory + "\\Data\\Cache\\Mili Settings.settings", "rb"
+    )
     defaultSettings = pickle.load(defaultSettings)
     return defaultSettings
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -72,6 +94,8 @@ def speak(audio):
     print(audio)
     engine.say(audio)
     engine.runAndWait()
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -79,6 +103,8 @@ def speak(audio):
 def onlySpeak(audio):
     engine.say(audio)
     engine.runAndWait()
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -86,8 +112,10 @@ def onlySpeak(audio):
 # Function to remove all grammatical errors from the input voice text
 def removeGrammaticalErrors(query) -> str:
     corrected_text = GingerIt().parse(query)
-    result = corrected_text['result']
+    result = corrected_text["result"]
     return result
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -105,7 +133,7 @@ def command():
         # Recognizing the input voice
         print("Recognizing...")
         # converting recognized voice into the string
-        query = r.recognize_google(audio, language='en-in', pFilter=0)
+        query = r.recognize_google(audio, language="en-in", pFilter=0)
         # removing all grammatical errors
         query = removeGrammaticalErrors(query).capitalize()
         print(f"User said: {query}\n")
@@ -114,6 +142,8 @@ def command():
         speak("Say that again please...")
         return "None"
     return query
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -127,6 +157,8 @@ def takeCommand():
             exit = True
             break
     return query
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -142,6 +174,8 @@ class DATETIME:
         current_time = today.strftime("%I:%M %p")
         speak(current_time)
         print(DATETIME.currentDate())
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -149,17 +183,18 @@ class DATETIME:
 # This function detects bad words, swear words by performing profanity check in a given text and return true or false value.
 def profanityFilter(query):
     url = "https://neutrinoapi-bad-word-filter.p.rapidapi.com/bad-word-filter"
-    payload = {
-        "content": f"{query}",
-        "censor-character": "*"
-    }
+    payload = {"content": f"{query}", "censor-character": "*"}
     headers = {
         "content-type": "application/x-www-form-urlencoded",
-        "X-RapidAPI-Key": Encryption(b'gAAAAABkdNLvCdK3P4kGRk1oGt8v3Def0i5tECK4SSBTz3PrwV3Dyy3xokcAOcJ-DoPBSWSzouAzvwxg6Qb_APIMjB0WDkos0l3oEE9ZvevH5TD6-p1qBA8AX2AeXWEqGzUN-RwofVkHWEo6iO4_g-Y2vk4mh829rQ==').decrypt_text(),
-        "X-RapidAPI-Host": "neutrinoapi-bad-word-filter.p.rapidapi.com"
+        "X-RapidAPI-Key": Encryption(
+            b"gAAAAABkdNLvCdK3P4kGRk1oGt8v3Def0i5tECK4SSBTz3PrwV3Dyy3xokcAOcJ-DoPBSWSzouAzvwxg6Qb_APIMjB0WDkos0l3oEE9ZvevH5TD6-p1qBA8AX2AeXWEqGzUN-RwofVkHWEo6iO4_g-Y2vk4mh829rQ=="
+        ).decrypt_text(),
+        "X-RapidAPI-Host": "neutrinoapi-bad-word-filter.p.rapidapi.com",
     }
     response = requests.post(url, data=payload, headers=headers).json()
-    return response.get('is-bad')
+    return response.get("is-bad")
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -169,36 +204,42 @@ def profanityFilter(query):
 def sentimentAnalysis(query):
     url = "https://microsoft-text-analytics1.p.rapidapi.com/sentiment"
 
-    payload = {"documents": [
-        {
-            "id": "1",
-            "language": "en",
-            "text": f"{query}"
-        }
-    ]}
+    payload = {"documents": [{"id": "1", "language": "en", "text": f"{query}"}]}
     headers = {
         "content-type": "application/json",
-        "X-RapidAPI-Key": Encryption(b'gAAAAABkdNK73vwKyDgk_c2_s2Sm0lG9zsujkTo4em06gJvHDiNTpQTq32n2zx604UCe2fDB4zbTqZWnPva-dWhyT3x5dk4hzcAJ04Wubw-I5tW65a3N-Gt1dKmqMAsWtOc5t_3rNI2vHirZYxiSXDzEoyipt9hxvQ==').decrypt_text(),
-        "X-RapidAPI-Host": "microsoft-text-analytics1.p.rapidapi.com"
+        "X-RapidAPI-Key": Encryption(
+            b"gAAAAABkdNK73vwKyDgk_c2_s2Sm0lG9zsujkTo4em06gJvHDiNTpQTq32n2zx604UCe2fDB4zbTqZWnPva-dWhyT3x5dk4hzcAJ04Wubw-I5tW65a3N-Gt1dKmqMAsWtOc5t_3rNI2vHirZYxiSXDzEoyipt9hxvQ=="
+        ).decrypt_text(),
+        "X-RapidAPI-Host": "microsoft-text-analytics1.p.rapidapi.com",
     }
 
     response = requests.post(url, json=payload, headers=headers).json()
-    sentiment = response.get('documents')[0].get('sentiment')
+    sentiment = response.get("documents")[0].get("sentiment")
     return sentiment
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
 # Sentiment Analysis by api ninjas
 # ------------------------------------------------------------------------------------------------------
 def sentimentAnalysisApiNinjas(query):
-    api_url = 'https://api.api-ninjas.com/v1/sentiment?text={}'.format(query)
+    api_url = "https://api.api-ninjas.com/v1/sentiment?text={}".format(query)
     response = requests.get(
-        api_url, headers={'X-Api-Key': Encryption(b'gAAAAABkdNJcXSk6GKsHGRaM9yngyv6dtKYbo5x7Pkd30f0CdVl-gh7ab0GSUx7-k3KHf9-rPKbim88CewqDW0ncBEaldlKvCdIbVooBiG4_VZo8DxOoTnvA0jjX5DA47w86VS2faEr7').decrypt_text()})
+        api_url,
+        headers={
+            "X-Api-Key": Encryption(
+                b"gAAAAABkdNJcXSk6GKsHGRaM9yngyv6dtKYbo5x7Pkd30f0CdVl-gh7ab0GSUx7-k3KHf9-rPKbim88CewqDW0ncBEaldlKvCdIbVooBiG4_VZo8DxOoTnvA0jjX5DA47w86VS2faEr7"
+            ).decrypt_text()
+        },
+    )
     if response.status_code == requests.codes.ok:
         response = response.json()
-        return response.get('score')
+        return response.get("score")
     else:
         return 0
+
+
 # ------------------------------------------------------------------------------------------------------
 
 
@@ -206,23 +247,23 @@ def sentimentAnalysisApiNinjas(query):
 # Returned value is list of dictionaries
 # -------------------------------------------------------------------------------------------------------
 def entity_recognition(query):
-    url = "https://microsoft-text-analytics1.p.rapidapi.com/entities/recognition/general"
-    payload = {"documents": [
-        {
-            "id": "1",
-            "language": "en",
-            "text": f"{query}"
-        }
-    ]}
+    url = (
+        "https://microsoft-text-analytics1.p.rapidapi.com/entities/recognition/general"
+    )
+    payload = {"documents": [{"id": "1", "language": "en", "text": f"{query}"}]}
     headers = {
         "content-type": "application/json",
-        "X-RapidAPI-Key": Encryption(b'gAAAAABkdNKRvYRgOggAA9V-85bLnWxrOc1cDCdTqanFOjx3Z6lCdDG_SqMvfUYmmq2kdnu3N2I7-0yYKac0kIoOLB6_J3sgRxEUaiB4NhLA4eT6EgMVTCxaAwGlP0o_fAoybeytpooClynlgZKY8LUTdOKc2NQLwQ==').decrypt_text(),
-        "X-RapidAPI-Host": "microsoft-text-analytics1.p.rapidapi.com"
+        "X-RapidAPI-Key": Encryption(
+            b"gAAAAABkdNKRvYRgOggAA9V-85bLnWxrOc1cDCdTqanFOjx3Z6lCdDG_SqMvfUYmmq2kdnu3N2I7-0yYKac0kIoOLB6_J3sgRxEUaiB4NhLA4eT6EgMVTCxaAwGlP0o_fAoybeytpooClynlgZKY8LUTdOKc2NQLwQ=="
+        ).decrypt_text(),
+        "X-RapidAPI-Host": "microsoft-text-analytics1.p.rapidapi.com",
     }
     response = requests.post(url, json=payload, headers=headers)
     response = response.json()
-    entities = response.get('documents')[0].get('entities')
+    entities = response.get("documents")[0].get("entities")
     return entities
+
+
 #  -------------------------------------------------------------------------------------------------------
 
 
@@ -245,19 +286,22 @@ class SearchQuery:
 
     def gptSearch(self):
         pass
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
 # -------------------------------------------------------------------------------------------------------
 def News(newsTopic):
-    client = gnewsclient.NewsClient(language='english',
-                                    location='india',
-                                    topic=newsTopic,
-                                    max_results=5)
+    client = gnewsclient.NewsClient(
+        language="english", location="india", topic=newsTopic, max_results=5
+    )
     news_list = client.get_news()
     speak(f"Todays {newsTopic} news  are ")
     for item in news_list:
-        speak(item['title'])
+        speak(item["title"])
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -287,6 +331,8 @@ def openAppWebsite(query):
                 webbrowser.open_new_tab(link)
             except Exception as e:
                 SearchQuery(query).googleResult()
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -301,9 +347,14 @@ class MoviesData:
         data = {}
         rand = sample(range(0, 25), 10)
         for element in movieData:
-            if element.data.get('year') is not None:
+            if element.data.get("year") is not None:
                 data.update(
-                    {f"{element.data.get('title')} {element.data.get('year')}": element.data.get('year')})
+                    {
+                        f"{element.data.get('title')} {element.data.get('year')}": element.data.get(
+                            "year"
+                        )
+                    }
+                )
         data = sorted(data.items(), key=lambda x: x[1], reverse=True)
         sortedMovies = list(dict(data).keys())
         result = [sortedMovies[i] for i in rand]
@@ -326,20 +377,22 @@ class MoviesData:
             key_list = list(pos.keys())
             val_list = list(pos.values())
             try:
-                position = val_list.index(('NOUN', 'compound'))
+                position = val_list.index(("NOUN", "compound"))
                 gerne = key_list[position]
                 moviesbygenres = self.db.get_top50_movies_by_genres([gerne])
                 speak(self.sortData(moviesbygenres))
             except:
                 topMovies = self.db.get_top250_movies()
                 speak(self.sortData(topMovies))
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
 #  Functions to return random jokes
 # -------------------------------------------------------------------------------------------------------
 async def randomJokes():
-    value = defaultMiliGeneralSettings().get('Explicit content')
+    value = defaultMiliGeneralSettings().get("Explicit content")
     if value == 0:
         value = True
     else:
@@ -351,6 +404,8 @@ async def randomJokes():
     else:
         speak(joke["setup"])
         speak(joke["delivery"])
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -363,16 +418,18 @@ def random_quotes():
     elif rand % 3 == 1:
         speak("Sure")
     try:
-        url = 'https://api.quotable.io/random'
+        url = "https://api.quotable.io/random"
         r = requests.get(url)
         quote = r.json()
-        content = quote['content']
-        author = quote['author']
+        content = quote["content"]
+        author = quote["author"]
         print(content)
-        print('-', author)
-        onlySpeak(author+", once said, "+content)
+        print("-", author)
+        onlySpeak(author + ", once said, " + content)
     except:
         ("Random quotes")
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -386,7 +443,9 @@ def maigicTrick():
         time.sleep(2)
         speak("Now add 6 to it and subtract 8 from it")
         time.sleep(2)
-        speak("Finally, subtract  the number you  originally thought of from the number you have now.")
+        speak(
+            "Finally, subtract  the number you  originally thought of from the number you have now."
+        )
         time.sleep(2)
         speak("The answer you're thinking of is 13 😲")
     elif rand % 4 == 1:
@@ -398,7 +457,9 @@ def maigicTrick():
         time.sleep(2)
         speak("Now add 4 to it and divide it by 2")
         time.sleep(2)
-        speak("Finally, subtract  the number you  originally thought of from the number you have now.")
+        speak(
+            "Finally, subtract  the number you  originally thought of from the number you have now."
+        )
         time.sleep(2)
         speak("The answer you're thinking of is 3 😲")
     elif rand % 4 == 2:
@@ -417,22 +478,26 @@ def maigicTrick():
         # your_age = str(your_age)
         # speak("Your age is " + your_age+" 😲")
     elif rand % 4 == 3:
-        speak("Pick any number between 1 and 9 and write the same number 3 times to make a 3 digit number")
+        speak(
+            "Pick any number between 1 and 9 and write the same number 3 times to make a 3 digit number"
+        )
         time.sleep(2)
         speak("Now add 3 digits together")
         time.sleep(2)
         speak("Divide the 3 digit number by the number you added a moment ago")
         time.sleep(2)
         speak("The answer you're thinking of is 37 😲")
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
 # available wifi-networks
 # -------------------------------------------------------------------------------------------------------
 def availableWifiNetwork():
-    devices = subprocess.check_output(['netsh', 'wlan', 'show', 'network'])
-    devices = devices.decode('ascii')
-    devices = devices.replace("\r", "").split('\n')
+    devices = subprocess.check_output(["netsh", "wlan", "show", "network"])
+    devices = devices.decode("ascii")
+    devices = devices.replace("\r", "").split("\n")
     speak(devices[2].strip())
     available_devices = []
     for element in devices:
@@ -440,6 +505,8 @@ def availableWifiNetwork():
             available_devices.append(element)
     available = "\n".join(available_devices)
     print(available)
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -455,11 +522,14 @@ class Media:
         try:
             query_string = urllib.parse.urlencode({"search_query": song_name})
             formatUrl = urllib.request.urlopen(
-                "https://www.youtube.com/search?" + query_string)
-            search_results = re.findall(
-                r"watch\?v=(\S{11})", formatUrl.read().decode())
-            music_link = "https://music.youtube.com/watch?v=" + \
-                "{}".format(search_results[0])+"&feature=share"
+                "https://www.youtube.com/search?" + query_string
+            )
+            search_results = re.findall(r"watch\?v=(\S{11})", formatUrl.read().decode())
+            music_link = (
+                "https://music.youtube.com/watch?v="
+                + "{}".format(search_results[0])
+                + "&feature=share"
+            )
             speak(f"Ok, asking Youtube Music to play {song_name}")
             webbrowser.open_new_tab(music_link)
         except Exception as e:
@@ -473,15 +543,17 @@ class Media:
         try:
             query_string = urllib.parse.urlencode({"search_query": query})
             formatUrl = urllib.request.urlopen(
-                "https://www.youtube.com/results?" + query_string)
-            search_results = re.findall(
-                r"watch\?v=(\S{11})", formatUrl.read().decode())
-            music_link = "https://www.youtube.com/watch?v=" + \
-                "{}".format(search_results[0])
+                "https://www.youtube.com/results?" + query_string
+            )
+            search_results = re.findall(r"watch\?v=(\S{11})", formatUrl.read().decode())
+            music_link = "https://www.youtube.com/watch?v=" + "{}".format(
+                search_results[0]
+            )
             speak("Ok, asking Youtube to play")
             webbrowser.open_new_tab(music_link)
         except Exception as e:
             SearchQuery(query).googleResult()
+
 
 # -------------------------------------------------------------------------------------------------------
 
@@ -493,16 +565,18 @@ def facts(query):
         url = "https://uselessfacts.jsph.pl/random.json?language=en"
         response = requests.request("GET", url)
         data = json.loads(response.text)
-        fun_fact = data['text']
+        fun_fact = data["text"]
         speak(fun_fact)
     else:
-        value = defaultMiliGeneralSettings().get('Explicit content')
+        value = defaultMiliGeneralSettings().get("Explicit content")
         if value == 1:
             value = True
         else:
             value = False
         x = randfacts.get_fact(value, value)
         speak(x)
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -518,12 +592,13 @@ class Grocery:
     def extract_grocery_items(self):
         entities = entity_recognition(self.query)
         for entity in entities:
-            if entity.get('category') == 'Product' and entity.get('text') != 'grocery':
-                self.grocery_items.append(str(entity.get('text')).capitalize())
+            if entity.get("category") == "Product" and entity.get("text") != "grocery":
+                self.grocery_items.append(str(entity.get("text")).capitalize())
+
     # ---------------------------------------------------------------------------
 
     def showGroceryList(self, id):
-        with open(self.filepath, 'rb') as file:
+        with open(self.filepath, "rb") as file:
             data = pickle.load(file)
             if id is True:
                 speak(f"You have {len(data)} items on that list")
@@ -536,7 +611,9 @@ class Grocery:
         thread = Thread(target=self.extract_grocery_items)
         thread.start()
         if os.path.exists(self.filepath) is False:
-            speak("I couldn't find a list called 'Grocery'. Do you want me to make one?")
+            speak(
+                "I couldn't find a list called 'Grocery'. Do you want me to make one?"
+            )
             value = takeCommand().lower()
             sentiment = sentimentAnalysisApiNinjas(value)
             if sentiment > 0:
@@ -546,13 +623,15 @@ class Grocery:
                 else:
                     if len(self.grocery_items) == 1:
                         speak(
-                            f"Got it, I made a list called 'Grocery' and added {self.grocery_items[0]}.")
+                            f"Got it, I made a list called 'Grocery' and added {self.grocery_items[0]}."
+                        )
                     else:
                         duplicate_list = self.grocery_items.copy()
                         last_item = duplicate_list.pop()
                         speak(
-                            f"Got it, I made a list called 'Grocery' and added {','.join(duplicate_list)} and {last_item}.")
-                    with open(self.filepath, 'wb') as file:
+                            f"Got it, I made a list called 'Grocery' and added {','.join(duplicate_list)} and {last_item}."
+                        )
+                    with open(self.filepath, "wb") as file:
                         pickle.dump(set(self.grocery_items), file)
                         file.close()
                     print("List Updated")
@@ -569,6 +648,7 @@ class Grocery:
                 file.close()
                 print("List Updated")
                 self.showGroceryList(False)
+
     # ---------------------------------------------------------------------------
 
     # Removing grocery items from the list
@@ -601,6 +681,7 @@ class Grocery:
                     file.seek(0)
                     pickle.dump(list, file)
                     file.close()
+
     # ---------------------------------------------------------------------------
 
     def handle_functions(self):
@@ -612,6 +693,7 @@ class Grocery:
             print("Grocery List")
             self.showGroceryList(True)
 
+
 # --------------------------------------------------------------------------------------------------------
 
 
@@ -620,7 +702,6 @@ class Grocery:
 # While the randomNumberFact() function generates a random fact based on a randomly generated number.
 # --------------------------------------------------------------------------------------------------------
 class factsRelatedWithNumber:
-
     def __init__(self, query):
         self.query = query
         self.number = None
@@ -629,24 +710,29 @@ class factsRelatedWithNumber:
         url = f"https://numbersapi.p.rapidapi.com/{self.number}/trivia"
         querystring = {"fragment": "true", "notfound": "floor", "json": "true"}
         headers = {
-            "X-RapidAPI-Key": Encryption(b'gAAAAABkdNHwdK4torDYeqMGTc2jQ4Dil1d_2fFJiPeFuW4tpsuVinnMhbM5ypxHUp7kyy6VoYLfSw6TbAkpvKWOT0pX6HVb1SiCfAo4HwOuKSLVeQaShdILrS3rXCL-Goxc4ijFmv-Y5E5p6LbvKZgYmixShnpy6g==').decrypt_text(),
-            "X-RapidAPI-Host": "numbersapi.p.rapidapi.com"
+            "X-RapidAPI-Key": Encryption(
+                b"gAAAAABkdNHwdK4torDYeqMGTc2jQ4Dil1d_2fFJiPeFuW4tpsuVinnMhbM5ypxHUp7kyy6VoYLfSw6TbAkpvKWOT0pX6HVb1SiCfAo4HwOuKSLVeQaShdILrS3rXCL-Goxc4ijFmv-Y5E5p6LbvKZgYmixShnpy6g=="
+            ).decrypt_text(),
+            "X-RapidAPI-Host": "numbersapi.p.rapidapi.com",
         }
         response = requests.request(
-            "GET", url, headers=headers, params=querystring).text
+            "GET", url, headers=headers, params=querystring
+        ).text
         response = json.loads(response)
-        speak(response.get('text').capitalize())
+        speak(response.get("text").capitalize())
 
     def randomNumberFact(self):
         url = "https://numbersapi.p.rapidapi.com/random/trivia"
-        querystring = {"min": "10", "max": "20",
-                       "fragment": "true", "json": "true"}
+        querystring = {"min": "10", "max": "20", "fragment": "true", "json": "true"}
         headers = {
-            "X-RapidAPI-Key": Encryption(b'gAAAAABkdNHwdK4torDYeqMGTc2jQ4Dil1d_2fFJiPeFuW4tpsuVinnMhbM5ypxHUp7kyy6VoYLfSw6TbAkpvKWOT0pX6HVb1SiCfAo4HwOuKSLVeQaShdILrS3rXCL-Goxc4ijFmv-Y5E5p6LbvKZgYmixShnpy6g==').decrypt_text(),
-            "X-RapidAPI-Host": "numbersapi.p.rapidapi.com"
+            "X-RapidAPI-Key": Encryption(
+                b"gAAAAABkdNHwdK4torDYeqMGTc2jQ4Dil1d_2fFJiPeFuW4tpsuVinnMhbM5ypxHUp7kyy6VoYLfSw6TbAkpvKWOT0pX6HVb1SiCfAo4HwOuKSLVeQaShdILrS3rXCL-Goxc4ijFmv-Y5E5p6LbvKZgYmixShnpy6g=="
+            ).decrypt_text(),
+            "X-RapidAPI-Host": "numbersapi.p.rapidapi.com",
         }
         response = requests.request(
-            "GET", url, headers=headers, params=querystring).text
+            "GET", url, headers=headers, params=querystring
+        ).text
         response = json.loads(response)
         result = f"{response.get('number')} is {response.get('text')}"
         speak(result)
@@ -659,6 +745,8 @@ class factsRelatedWithNumber:
                 break
         if self.number is None:
             self.randomNumberFact()
+
+
 # --------------------------------------------------------------------------------------------------------
 
 
@@ -681,6 +769,8 @@ def deviceControl(val):
             subprocess.call(["shutdown", "/l"])
     else:
         speak("Ok...")
+
+
 # --------------------------------------------------------------------------------------------------------
 
 
@@ -691,17 +781,31 @@ class Secret:
     def __init__(self):
         self.secret = None
         self.query_secret = None
-        self.file_path = application_directory+'\\Data\\Files\\Secrets.bin'
+        self.file_path = application_directory + "\\Data\\Files\\Secrets.bin"
 
     # This function is used to convert the secret from first person to the second person
     # --------------------------------------------------------------------------------------------------------
     def firstPersonToSecondPerson(self) -> str:
-
         pronouns = ("i", "you", "we", "my", "mine", "us", "me", "our", "ours")
         pronounsFirstPersonSubject = {
-            "i": "you", "you": "i", "we": "you", "my": "your", "our": "your", "us": "you", "ours": "yours"}
-        pronounsFirstPersonObject = {"you": "me", "mine": "your",
-                                     "my": "your", "us": "you", "me": "you", "our": "your", "us": "you", "ours": "yours"}
+            "i": "you",
+            "you": "i",
+            "we": "you",
+            "my": "your",
+            "our": "your",
+            "us": "you",
+            "ours": "yours",
+        }
+        pronounsFirstPersonObject = {
+            "you": "me",
+            "mine": "your",
+            "my": "your",
+            "us": "you",
+            "me": "you",
+            "our": "your",
+            "us": "you",
+            "ours": "yours",
+        }
 
         nlp = spacy.load("en_core_web_sm")
         doc = nlp(self.query_secret)
@@ -712,12 +816,14 @@ class Secret:
                     query[i] = pronounsFirstPersonSubject.get(token.text)
                 else:
                     query[i] = pronounsFirstPersonObject.get(token.text)
-                    
+
         query = " ".join(query)
         query = removeGrammaticalErrors(query)
         current_date = datetime.strftime(datetime.now(), "%d %B")
         self.secret = Encryption(
-            f"On {current_date} you said, {query.capitalize()}.").encrypt_text()
+            f"On {current_date} you said, {query.capitalize()}."
+        ).encrypt_text()
+
     # --------------------------------------------------------------------------------------------------------
 
     # This function takes secret query from the user and save it in secrets.bin file
@@ -734,9 +840,7 @@ class Secret:
         secret_date = datetime.strftime(datetime.now(), "Date: %A, %d %B, %Y")
         secret_time = datetime.strftime(datetime.now(), "Time: %I:%M %p")
         thread.join()
-        data = {"Date": secret_date,
-                "Time": secret_time,
-                "Secret": self.secret}
+        data = {"Date": secret_date, "Time": secret_time, "Secret": self.secret}
         if os.path.exists(self.file_path):
             with open(self.file_path, "rb+") as file:
                 list = pickle.load(file)
@@ -745,10 +849,11 @@ class Secret:
                 pickle.dump(list, file)
                 file.close()
         else:
-            with open(self.file_path, 'wb') as file:
+            with open(self.file_path, "wb") as file:
                 pickle.dump([data], file)
                 file.close()
         speak("Oh.. ok")
+
     # --------------------------------------------------------------------------------------------------------
 
     # This function is used to delete the secrets
@@ -759,6 +864,7 @@ class Secret:
         else:
             os.remove(self.file_path)
             speak("Your secrets has been deleted")
+
     # --------------------------------------------------------------------------------------------------------
 
     # This function is used to retrieve the secrets from the encrypted file
@@ -768,18 +874,83 @@ class Secret:
             speak("Currently you have no secrets")
         else:
             speak("Your secrets are ")
-            with open(self.file_path, 'rb') as file:
+            with open(self.file_path, "rb") as file:
                 data = pickle.load(file)
             for secret in data:
                 print(secret.get("Date"))
                 print(secret.get("Time"))
-                decrypted_secret = Encryption(
-                    secret.get("Secret")).decrypt_text()
+                decrypted_secret = Encryption(secret.get("Secret")).decrypt_text()
                 speak(decrypted_secret)
                 print()
+
     # --------------------------------------------------------------------------------------------------------
+
+
 # --------------------------------------------------------------------------------------------------------
 
 
+# mit model response
+# --------------------------------------------------------------------------------------------------------
+def wit_model(query):
+    entities, intent = witResponse(query)
+    if ("translate" in query or "meaning" in query) and intent == "translate":
+        flag = True
+        language = entities["language:language"]
+        body = entities["wit$message_body:message_body"]
+        if len(language) > 1:
+            flag = False
+            # translate function
+        elif len(body) > 1:
+            flag = False
+            # translate function
+        else:
+            language = language[0]["value"]
+            body = body[0]["value"]
+            # translate function
+        return True
+    elif intent == "wit$get_weather":
+        try:
+            location = entities["wit$location:location"][0]["body"]
+            # function of weather
+        except:
+            pass
+            # function of weather
+        return True
+    elif intent == "map":
+        try:
+            locations = entities["wit$location:location"]
+            if len(locations) == 2:
+                origin = locations[0]["body"]
+                destination = locations[1]["body"]
+                map_interface.distanceAndRoute(origin, destination)
+                map_interface.mainloop()
+            else:
+                destination = locations[0]["body"]
+                map_interface.distanceAndRoute(None, destination)
+                map_interface.mainloop()
+        except:
+            map_interface.currentLocation()
+            map_interface.mainloop()
+        return True
+    elif intent == "grocery":
+        # grocery function
+        return True
+    else:
+        return False
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# Executing all models here
+def AI_models(query: str):
+    wit_response = wit_model(query)
+    if wit_response is False:
+        pass
+
+
 if __name__ == "__main__":
-    availableWifiNetwork()
+    while True:
+        query = input("You : ")
+        print()
+        AI_models(query)

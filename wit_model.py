@@ -8,7 +8,7 @@ access_token = Encryption(
 client = wit.Wit(access_token=access_token)
 
 
-def model(query):
+def witResponse(query):
     response = client.message(query)
     entities = response["entities"]
     intent = response["intents"][0]["name"]
