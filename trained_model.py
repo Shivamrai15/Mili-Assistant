@@ -42,13 +42,15 @@ def chat(query: str):
     results = model.predict([bag_of_words(query, words)])[0]
     results_idx = numpy.argmax(results)
     tag = labels[results_idx]
-    print(results[results_idx])
-    for tg in data["intents"]:
-        if tg["tag"] == tag:
-            responses = tg["response"]
-            context_set = tg["context_set"]
-    if len(responses) != 0:
-        response = random.choice(responses)
+    if results[results_idx] > 0.9:
+        for tg in data["intents"]:
+            if tg["tag"] == tag:
+                responses = tg["response"]
+                context_set = tg["context_set"]
+        if len(responses) != 0:
+            response = random.choice(responses)
+        else:
+            response = None
+        return response, context_set
     else:
-        response = None
-    return response, context_set
+        return None, None

@@ -9,11 +9,11 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 # pass True to turn on bluetooth
 # pass False to turn of bluetooth
 # ------------------------------------------------------------------------------------------------------
-async def bluetooth(value):
+async def bluetooth(flag:bool):
     all_radios = await radios.Radio.get_radios_async()
     for radio in all_radios:
         if radio.kind == radios.RadioKind.BLUETOOTH:
-            if value:
+            if flag:
                 result = await radio.set_state_async(radios.RadioState.ON)
             else:
                 result = await radio.set_state_async(radios.RadioState.OFF)
@@ -24,11 +24,11 @@ async def bluetooth(value):
 # pass True to turn on wifi
 # pass False to turn of wifi
 # ------------------------------------------------------------------------------------------------------
-async def WIFI(turn_on):
+async def WIFI(flag:bool):
     all_radios = await radios.Radio.get_radios_async()
     for radio in all_radios:
         if radio.kind == radios.RadioKind.WI_FI:
-            if turn_on:
+            if flag:
                 result = await radio.set_state_async(radios.RadioState.ON)
             else:
                 result = await radio.set_state_async(radios.RadioState.OFF)

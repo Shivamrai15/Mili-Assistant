@@ -14,7 +14,6 @@ from encryption import Encryption
 from location import geoLogicalCoordinate, GPS
 
 
-
 application_directory = os.getcwd()
 
 
@@ -234,13 +233,11 @@ class ScreenShot:
         self.filepath = f"C:\\Users\\{username}\\Pictures\\Screenshots\\{file_name}"
 
     def take_screenshot(self):
-        # speak("Wait for a moment") --> to be used when function is called
         thread = Thread(target=self.file_name)
         thread.start()
         image = pyscreenshot.grab()
         thread.join()
         image.save(self.filepath)
-        # speak("Screenshot has been clicked \U0001f600") --> used after the function is called
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -264,9 +261,5 @@ def device_Model() -> str:
     device_name = platform.node()
     return device_name
 
+
 # ------------------------------------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    # Translate("can you translate what is the meaning of love in hindi").google_translate()
-    print(device_name())

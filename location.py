@@ -56,7 +56,7 @@ def reverseGeocoding(latitude, longitude) -> str:
 # # Microsoft entity recoginition
 # # Returned value is list of dictionaries
 # # -------------------------------------------------------------------------------------------------------
-def entityRecognition(query):
+def entityRecognition(query)->list:
     url = (
         "https://microsoft-text-analytics1.p.rapidapi.com/entities/recognition/general"
     )
@@ -171,7 +171,7 @@ class GPS:
         pos = await locator.get_geoposition_async()
         return [pos.coordinate.latitude, pos.coordinate.longitude]
 
-    def getLocation():
+    def getLocation()->list:
         try:
             return asyncio.run(GPS.getCoordinates())
         except PermissionError:

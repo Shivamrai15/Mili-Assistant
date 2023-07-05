@@ -1,13 +1,13 @@
 [
   {
     "intention": "Here is me doing sur practice",
-    "lyrics": "Sa Re Ga Ma Pa Dha Ni Sa \ud83d\ude2e\ud83c\udfb6\ud83c\udfb6\ud83c\udfb6",
+    "lyrics": "Sa Re Ga Ma Pa Dha Ni Sa",
     "audio_path": "Data\\Sounds\\Sur Practice.wav"
   },
   {
     "intention": "I made this song just for you!",
     "lyrics": "I am your personal assistant, tu tu tu tu,\ntu tu tu tu, I am here to help you tu tu tu tu\nI can search for you, even find your places,\ncall for you, mail for you, chat for you,\nlaugh with you, sing for you even play games\nand cover many bases.",
-    "audio_path": "Data\\Sounds\\jingle_bells.wav"
+    "audio_path": "Data\\Sounds\\Assistant song.wav"
   },
   {
     "intention": null,

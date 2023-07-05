@@ -8,7 +8,7 @@ key = Encryption(
 os.environ["_BARD_API_KEY"] = key
 
 
-def bardResponse(prompt: str):
+def bardResponse(prompt: str)->str:
     response = Bard().get_answer(prompt)
     response = str(response.get("content"))
     response = response.replace("**", '"')

@@ -7,6 +7,7 @@ import time
 import spacy
 import pickle
 import pyttsx3
+import asyncio
 import requests
 import randfacts
 import AppOpener
@@ -18,15 +19,17 @@ import urllib.request
 from jokeapi import Jokes
 from threading import Thread
 from datetime import datetime
+from playsound import playsound
+from translate import Translate
 import speech_recognition as sr
 from pymongo import MongoClient
 from googlesearch import search
 from encryption import Encryption
-from random import randint, sample
 from gnewsclient import gnewsclient
 from gingerit.gingerit import GingerIt
-from functions import CredentialManager
-from translate import Translate
+from random import randint, sample, choice
+from functions import CredentialManager, ScreenShot
+from hardware import WIFI, bluetooth, change_volume
 
 
 # importing interfaces
@@ -70,7 +73,7 @@ __collection__ = __database__["User Credentials"]
 engine = pyttsx3.init("sapi5")
 voices = engine.getProperty("voices")
 engine.setProperty("volume", 1.0)
-engine.setProperty("rate", 140)
+engine.setProperty("rate", 160)
 engine.setProperty("voice", voices[1].id)
 
 # -------------------------------------------------------------------------------------------------------
@@ -180,7 +183,7 @@ class DATETIME:
 
 # -------------------------------------------------------------------------------------------------------
 # This function detects bad words, swear words by performing profanity check in a given text and return true or false value.
-def profanityFilter(query):
+def profanityFilter(query: str) -> bool:
     url = "https://neutrinoapi-bad-word-filter.p.rapidapi.com/bad-word-filter"
     payload = {"content": f"{query}", "censor-character": "*"}
     headers = {
@@ -191,7 +194,7 @@ def profanityFilter(query):
         "X-RapidAPI-Host": "neutrinoapi-bad-word-filter.p.rapidapi.com",
     }
     response = requests.post(url, data=payload, headers=headers).json()
-    return response.get("is-bad")
+    return response["is-bad"]
 
 
 # -------------------------------------------------------------------------------------------------------
@@ -200,7 +203,7 @@ def profanityFilter(query):
 # -------------------------------------------------------------------------------------------------------
 # This function returns the sentiment of the text
 # Return value positive, negative, neutral of type string
-def sentimentAnalysis(query):
+def sentimentAnalysis(query: str) -> str:
     url = "https://microsoft-text-analytics1.p.rapidapi.com/sentiment"
 
     payload = {"documents": [{"id": "1", "language": "en", "text": f"{query}"}]}
@@ -222,7 +225,7 @@ def sentimentAnalysis(query):
 
 # Sentiment Analysis by api ninjas
 # ------------------------------------------------------------------------------------------------------
-def sentimentAnalysisApiNinjas(query):
+def sentimentAnalysisApiNinjas(query: str) -> float:
     api_url = "https://api.api-ninjas.com/v1/sentiment?text={}".format(query)
     response = requests.get(
         api_url,
@@ -245,7 +248,7 @@ def sentimentAnalysisApiNinjas(query):
 # Microsoft entity recoginition
 # Returned value is list of dictionaries
 # -------------------------------------------------------------------------------------------------------
-def entity_recognition(query):
+def entity_recognition(query: str) -> list:
     url = (
         "https://microsoft-text-analytics1.p.rapidapi.com/entities/recognition/general"
     )
@@ -291,7 +294,7 @@ class SearchQuery:
 
 
 # -------------------------------------------------------------------------------------------------------
-def News(newsTopic):
+def getNews(newsTopic: str):
     client = gnewsclient.NewsClient(
         language="english", location="india", topic=newsTopic, max_results=5
     )
@@ -307,10 +310,12 @@ def News(newsTopic):
 # -------------------------------------------------------------------------------------------------------
 # Function that first check for application, if the application exists then it will open that application
 # Otherwise it will open related application
-def openAppWebsite(query):
+def openAppWebsite(query: str):
     if ("mili" in query and "setting" in query) or "profile" in query:
-        # Login().Interface().pageInterface(True)
-        pass
+        interface = GUI()
+        interface.Profile()()
+        interface.mainloop()
+        del interface
     else:
         apps = AppOpener.give_appnames()
         goto = None
@@ -888,9 +893,203 @@ class Secret:
 # --------------------------------------------------------------------------------------------------------
 
 
-# mit model response
 # --------------------------------------------------------------------------------------------------------
-def wit_model(query):
+class QNA:
+    def love(query: str):
+        rand = randint(0, 100)
+        if "love" in query:
+            if rand % 1 == 0:
+                speak("You make me the happiest virtual assistant")
+                speak("But what make you say that ?")
+                takeCommand()
+                speak("Interesting!")
+                speak("And what do you love about me?")
+                takeCommand()
+                speak("Thankyou for sharing!")
+                speak("You should know I think you're the best")
+            elif rand % 2 == 1:
+                speak("Oh my! I am blushing")
+                speak("What made you say that!")
+                takeCommand()
+                speak("Hmm...Never thought of that!")
+                speak("And what do you love about me?")
+                takeCommand()
+                speak("Thankyou for sharing!")
+                speak("You're pretty amazing")
+        elif "like" in query:
+            speak(
+                choice(
+                    [
+                        "There's only one name on my list of favourite people, and that's you",
+                        "I like you even more than I like searching, believe me, that's saying something",
+                        "You are pretty awesome, my intentions are pure",
+                        "Absolutely! You're the best",
+                        "I can't feel romantic love but I think you are wonderful",
+                    ]
+                )
+            )
+        else:
+            speak(
+                choice(
+                    [
+                        "This is one of those things we'd both have to agree on. I'd like to just be friends. Thank you for the love though",
+                        "This is one we'd both have to agree on. I'd prefer to keep our relationship friendly",
+                    ]
+                )
+            )
+
+    def conversations():
+        newQuery = takeCommand().lower()
+        sentiment = sentimentAnalysisApiNinjas(newQuery)
+        if sentiment > 0:
+            speak("We think alike!")
+            speak("Don't tell anyone, but I like talking to you!")
+            speak("Did you know you are my favourite person to talk to?")
+            takeCommand()
+            speak("You are absolutely amazing!")
+            speak(
+                "In a world full of dosas, you are a masala dosa, with some chutney on the side!"
+            )
+        else:
+            speak("Okay, I am around if you need me!")
+
+    def dance():
+        playsound(os.path.join(application_directory, r"Data\Sounds\dance beat.wav"))
+        speak(
+            "You might not know this about me but I'm a total jukebox: I have all these sounds I can play for you"
+        )
+        speak("Wanna hear one?")
+        newQuery = takeCommand().lower()
+        sentiment = sentimentAnalysisApiNinjas(newQuery)
+        if sentiment < 0:
+            speak(
+                "Ok, I can also show you one of my favorite dance moves inspired by emojis"
+            )
+            nextQuery = takeCommand().lower()
+            sentiment = sentimentAnalysisApiNinjas(nextQuery)
+            if sentiment < 0:
+                speak("Ok, let me know if I can do anything for you")
+            else:
+                speak("Ok get ready, here's my moonwalk:")
+                print("🌖🌗🌘🌚🌒🌓🌔")
+                playsound(
+                    os.path.join(application_directory, r"Data\Sounds\moon walk.wav")
+                )
+        else:
+            speak(
+                "Sweet, I've been wanting to share this piece on the mbira:it's a traditional instrument from Zimbabwe"
+            )
+            print("🔉")
+            playsound(os.path.join(application_directory, r"Data\Sounds\mbira.wav"))
+            speak("Do you like that ?")
+            nextQuery = takeCommand().lower()
+            sentiment = sentimentAnalysisApiNinjas(nextQuery)
+            if sentiment < 0:
+                speak("Thanks for listening anyway")
+                speak("You can always ask for other instrument sounds you might prefer")
+            else:
+                speak("Thanks, I can play other instrument sounds if you ask me")
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# function to get complement
+# --------------------------------------------------------------------------------------------------------
+def getComplement():
+    with open(
+        os.path.join(application_directory, r"Data\Files\complements.json"), "r"
+    ) as file:
+        complements = json.load(file)
+        random_complement = choice(complements)
+        for complement in random_complement:
+            speak(complement)
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# function to get riddles
+# --------------------------------------------------------------------------------------------------------
+def getRiddles():
+    with open(
+        os.path.join(application_directory, r"Data\Files\riddles.json"), "r"
+    ) as file:
+        riddles = json.load(file)
+        random_riddle = choice(riddles)
+        riddle = random_riddle["riddle"]
+        answer = random_riddle["answer"]
+        audio_path = os.path.join(application_directory, random_riddle["url"])
+        speak(riddle)
+        speak(answer)
+        playsound(audio_path)
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# function to sing a song by mili
+# --------------------------------------------------------------------------------------------------------
+def miliSingSong():
+    with open(
+        os.path.join(application_directory, r"Data\Files\mili_songs.json"), "r"
+    ) as file:
+        songs = json.load(file)
+        random_song = choice(songs)
+        intention = random_song["intention"]
+        lyrics = random_song["lyrics"]
+        audio_path = os.path.join(application_directory, random_song["audio_path"])
+        speak(intention)
+        print(lyrics)
+        playsound(audio_path)
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# function to sing a rap by mili
+# --------------------------------------------------------------------------------------------------------
+def miliRapSong():
+    with open(
+        os.path.join(application_directory, r"Data\Files\mili_rap_songs.json"), "r"
+    ) as file:
+        songs = json.load(file)
+        random_song = choice(songs)
+        lyrics = random_song["lyrics"]
+        audio_path = random_song["audio_path"]
+        if audio_path is None:
+            speak(lyrics)
+        else:
+            print(lyrics)
+            audio_path = os.path.join(application_directory, audio_path)
+            playsound(audio_path)
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# function to sing a poem
+# --------------------------------------------------------------------------------------------------------
+def getPoem():
+    with open(
+        os.path.join(application_directory, r"Data\Files\poems.json"), "r"
+    ) as file:
+        poems = json.load(file)
+        random_poem = choice(poems)
+        poem_name = random_poem["poem_name"]
+        poem = random_poem["poem"]
+        audio_path = os.path.join(application_directory, random_poem["url"])
+        print(poem_name, "\n")
+        print(poem)
+        playsound(audio_path)
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# wit model response
+# --------------------------------------------------------------------------------------------------------
+def wit_model(query) -> bool:
     entities, intent = witResponse(query)
     if ("translate" in query or "meaning" in query) and intent == "translate":
         flag = True
@@ -947,9 +1146,79 @@ def wit_model(query):
             return True
         elif "show" in query or "what" in query:
             Grocery(query).showGroceryList(True)
-            return True    
+            return True
+        else:
+            return False
     else:
         return False
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# trained model response
+# --------------------------------------------------------------------------------------------------------
+def trained_mode_response(query: str) -> bool:
+    response, context_set = chat(query)
+    if response is None and context_set is None:
+        return False
+    else:
+        if response is not None:
+            speak(response)
+        if context_set == "movie":
+            MoviesData(query).Movies()
+        elif context_set == "screenshot":
+            ScreenShot().take_screenshot()
+            speak("Screenshot has been clicked")
+        elif context_set == "power":
+            if "shut down" in query:
+                deviceControl(1)
+            elif "restart" in query:
+                deviceControl(2)
+            else:
+                deviceControl(3)
+        elif context_set == "news":
+            if "international" in query:
+                getNews("world")
+            elif "sport" in query:
+                getNews("sports")
+            else:
+                getNews("nation")
+        elif context_set == "profile":
+            interface = GUI()
+            interface.Profile()
+            interface.mainloop()
+        elif context_set == "wifi":
+            query_array = query.split()
+            if "on" in query_array:
+                WIFI(True)
+            else:
+                WIFI(False)
+        elif context_set == "bluetooth":
+            query_array = query.split()
+            if "on" in query_array:
+                bluetooth(True)
+            else:
+                bluetooth(False)
+        elif context_set == "quote":
+            random_quotes()
+        elif context_set == "complement":
+            getComplement()
+        elif context_set == "song":
+            if "rap" in query:
+                miliRapSong()
+            else:
+                miliSingSong()
+        elif context_set == "riddle":
+            getRiddles()
+        elif context_set == "joke":
+            asyncio.run(randomJokes())
+        elif context_set == "love":
+            QNA.love(query)
+        elif context_set == "dance":
+            QNA.dance()
+        elif context_set == "conversations":
+            QNA.conversations()
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -959,7 +1228,16 @@ def wit_model(query):
 def AI_models(query: str):
     wit_response = wit_model(query)
     if wit_response is False:
-        pass
+        if "play" in query and "song" in query:
+            pass
+        elif "play" in query:
+            pass
+        elif "open" in query:
+            pass
+        else:
+            trained_response = trained_mode_response(query)
+            if trained_response is False:
+                pass
 
 
 if __name__ == "__main__":

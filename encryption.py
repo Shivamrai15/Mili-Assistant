@@ -6,7 +6,7 @@ application_directory = os.getcwd()
 
 # ------------------------------------------------------------------------------------------------------------
 class Encryption:
-    def __init__(self, text) -> None:
+    def __init__(self, text:str) -> None:
         self.text = text
 
     def load_key(self):
