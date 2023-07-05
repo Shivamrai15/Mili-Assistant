@@ -51,9 +51,6 @@ from wit_model import witResponse
 # Current directory of the application
 application_directory = os.getcwd()
 
-# object of the interface
-map_interface = APP()
-
 
 # Setting database connection
 # -------------------------------------------------------------------------------------------------------
@@ -910,14 +907,19 @@ def wit_model(query):
             Translate(query, flag).google_translate()
         return True
     elif intent == "wit$get_weather":
+        interface = GUI()
         try:
             location = entities["wit$location:location"][0]["body"]
-            # function of weather
+            interface.weatherGUI(location)
+            print("weather with location", location)
         except:
-            pass
-            # function of weather
+            print("weather without location")
+            interface.weatherGUI()
+        interface.mainloop()
+        del interface
         return True
     elif intent == "map":
+        map_interface = APP()
         try:
             locations = entities["wit$location:location"]
             if len(locations) == 2:
@@ -925,17 +927,27 @@ def wit_model(query):
                 destination = locations[1]["body"]
                 map_interface.distanceAndRoute(origin, destination)
                 map_interface.mainloop()
+                del map_interface
             else:
                 destination = locations[0]["body"]
                 map_interface.distanceAndRoute(None, destination)
                 map_interface.mainloop()
+                del map_interface
         except:
             map_interface.currentLocation()
             map_interface.mainloop()
+            del map_interface
         return True
     elif intent == "grocery":
-        # grocery function
-        return True
+        if "add" in query:
+            Grocery(query).add_item()
+            return True
+        elif "remove" in query or "delete" in query:
+            Grocery(query).remove_grocery_item()
+            return True
+        elif "show" in query or "what" in query:
+            Grocery(query).showGroceryList(True)
+            return True    
     else:
         return False
 
