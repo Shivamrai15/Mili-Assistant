@@ -793,6 +793,43 @@
                 "Of course! I hope you like me too"
             ],
             "context_set": ""
+        },
+        {
+            "tag": "poem",
+            "patterns": [
+                "can you sing a poem",
+                "tell me a poem",
+                "sing a poem"
+            ],
+            "response": [],
+            "context_set": "poem"
+        },
+        {
+            "tag": "fact",
+            "patterns": [
+                "can you tell me a fact",
+                "tell me a fun fact",
+                "tell me a fact related with number"
+            ],
+            "response": [
+                "Sure thing",
+                "Will do"
+            ],
+            "context_set": ""
+        },
+        {
+            "tag": "about",
+            "patterns": [
+                "who are you",
+                "tell me about yourself",
+                "Who exactly are you"
+            ],
+            "response": [
+                "I am your Mili Assistant, here to assist you. Whether you need answers, guidance, or help finding the quickest way home, simply ask and consider it done. Your satisfaction is my utmost priority, and I am at your service to fulfill your every wish.",
+                "I'm a helper, and a friend \nI can help with remainders, suggestions and music \nOr I can help you search for something online",
+                "I'm your Mili Assistant and I'm here to help you get things don, and entertain you"
+            ],
+            "context_set": ""
         }
     ]
 }

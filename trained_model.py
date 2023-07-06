@@ -1,4 +1,4 @@
-import tflearn
+import tensorflow as tf
 import numpy
 import pickle
 import nltk
@@ -16,14 +16,7 @@ with open("Data\\Files\\dataset.json", "r") as file:
 with open("Data\\Files\\data.pickle", "rb") as file:
     words, labels, training, output = pickle.load(file)
 
-net = tflearn.input_data(shape=[None, len(training[0])])
-net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, len(output[0]), activation="softmax")
-net = tflearn.regression(net)
-
-model = tflearn.DNN(net)
-model.load("model.tflearn")
+model = tf.keras.models.load_model("Data\\Files\\model.tensorflow")
 
 
 def bag_of_words(s, words):
@@ -35,14 +28,14 @@ def bag_of_words(s, words):
         for i, w in enumerate(words):
             if w == se:
                 bag[i] = 1
-    return numpy.array(bag)
+    return numpy.array(bag).reshape(1, len(words))
 
 
 def chat(query: str):
     results = model.predict([bag_of_words(query, words)])[0]
     results_idx = numpy.argmax(results)
     tag = labels[results_idx]
-    if results[results_idx] > 0.9:
+    if results[results_idx] >= 0.98:
         for tg in data["intents"]:
             if tg["tag"] == tag:
                 responses = tg["response"]
