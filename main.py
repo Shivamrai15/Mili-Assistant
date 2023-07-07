@@ -700,7 +700,7 @@ class Grocery:
 # While the randomNumberFact() function generates a random fact based on a randomly generated number.
 # --------------------------------------------------------------------------------------------------------
 class factsRelatedWithNumber:
-    def __init__(self, query):
+    def __init__(self, query: str):
         self.query = query
         self.number = None
 
@@ -742,7 +742,10 @@ class factsRelatedWithNumber:
                 self.givenNumberFact()
                 break
         if self.number is None:
-            self.randomNumberFact()
+            if "number" in self.query:
+                self.randomNumberFact()
+            else:
+                facts()
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -1213,6 +1216,10 @@ def trained_mode_response(query: str) -> bool:
             QNA.dance()
         elif context_set == "conversations":
             QNA.conversations()
+        elif context_set == "poem":
+            getPoem()
+        elif context_set == "fact":
+            factsRelatedWithNumber(query)
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -1246,7 +1253,10 @@ if __name__ == "__main__":
     else:
         flag = True
         while flag is not False:
-            query = input("You : ")
-            print()
-            AI_models(query)
-            flag = True
+            _id = int(input("Enter 1 to continue"))
+            if _id == 1:
+                query = takeCommand().lower()
+                AI_models(query)
+                flag = True
+            else:
+                break

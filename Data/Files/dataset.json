@@ -815,7 +815,7 @@
                 "Sure thing",
                 "Will do"
             ],
-            "context_set": ""
+            "context_set": "fact"
         },
         {
             "tag": "about",

@@ -68,7 +68,7 @@ model = tf.keras.Sequential(
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
 # Train the model
-model.fit(training, output, epochs=2000, batch_size=8, verbose=1)
+model.fit(training, output, epochs=500, batch_size=8, verbose=1)
 
 # Save the trained model
 model.save("Data\\Files\\model.tensorflow")
