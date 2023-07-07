@@ -80,7 +80,7 @@ engine.setProperty("voice", voices[1].id)
 
 
 # -------------------------------------------------------------------------------------------------------
-def defaultMiliGeneralSettings():
+def defaultMiliGeneralSettings()->dict:
     defaultSettings = open(
         application_directory + "\\Data\\Cache\\Mili Settings.settings", "rb"
     )
@@ -1256,7 +1256,11 @@ if __name__ == "__main__":
             _id = int(input("Enter 1 to continue"))
             if _id == 1:
                 query = takeCommand().lower()
-                AI_models(query)
-                flag = True
+                profanity = profanityFilter(query)
+                if profanityFilter is True and defaultMiliGeneralSettings().get("Explicit content") == 0:
+                    speak("Your command contains profanity. To continue, please enable explicit content in your Mili settings")
+                else:
+                    AI_models(query)
+                    flag = True
             else:
                 break

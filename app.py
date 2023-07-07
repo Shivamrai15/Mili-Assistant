@@ -18,6 +18,7 @@ from location import GPS
 from random import randint
 from functions import Weather
 from functools import lru_cache
+from greetMail import greetEmail
 from encryption import Encryption
 from threading import Thread, Lock
 from emailMessage import MailToUser
@@ -2109,6 +2110,7 @@ class GUI(customtkinter.CTk):
             fg_color="#252525",
             width=25,
             hover=False,
+            command=lambda: webbrowser.open_new_tab("https://www.instagram.com/miliassistant/"),
         ).grid(row=0, column=0, sticky="n", padx=(0, 15))
         customtkinter.CTkButton(
             aboutUsFooterFrame,
@@ -2125,6 +2127,9 @@ class GUI(customtkinter.CTk):
             fg_color="#252525",
             width=25,
             hover=False,
+            command=lambda : webbrowser.open_new_tab(
+                "https://github.com/Shivamrai15/Mili-Assistant"
+            ),
         ).grid(row=0, column=2, sticky="n", padx=(0, 15))
         customtkinter.CTkLabel(
             contentframe,
@@ -3545,6 +3550,7 @@ class GUI(customtkinter.CTk):
                                 )
                                 return None
                         else:
+                            forgetPasswordCodeButton.configure(text = "Sending OTP")
                             self.OTP = randint(111111, 999999)
                             self.emailAddress.configure(text=self.email)
                             thread = Thread(target=self.sendOTP())
@@ -3703,6 +3709,14 @@ class GUI(customtkinter.CTk):
                 enteredCode = int(self.codeEntry.get())
                 generatedOTP = self.OTP
                 if generatedOTP == enteredCode:
+                    email_data = {
+                        "name": self.data.get("name"),
+                        "sender": "yourvirtualmiliassistant@gmail.com",
+                        "receiver": self.data.get("email"),
+                        "password": Encryption(
+                            b"gAAAAABkc4Xc0EQcaqGSJDXLkaRr7hN0SR0fZhz1fobcxWG8GlJSb0fkTWHzWZrcfknDqkVgdr0gq2ASHVWUku-m6-R1rn3pP0wP9fF-bozeHvfIlUwtLXk="
+                        ).decrypt_text(),
+                    }
                     thread1 = Thread(target=self.updateDataBase)
                     thread2 = Thread(
                         target=self.createCacheCredentials,
@@ -3711,8 +3725,9 @@ class GUI(customtkinter.CTk):
                             self.data.get("password"),
                         ),
                     )
-                    thread1.start(), thread2.start()
-                    thread1.join(), thread2.join()
+                    thread3 = Thread(target=greetEmail, args=(email_data,))
+                    thread1.start(), thread2.start(), thread3.start()
+                    thread1.join(), thread2.join(), thread3.join()
                     messagebox.showinfo(
                         "Mili", "Your account has been created successfully"
                     )
