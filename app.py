@@ -244,7 +244,7 @@ class GUI(customtkinter.CTk):
     # url = file path, height = required height of image, width = required width of image
     # ---------------------------------------------------------------------------------------------------
     def ImageObject(self, url, height, width):
-        img = Image.open(application_directory + f"\\{url}")
+        img = Image.open(os.path.join(application_directory, url))
         img = customtkinter.CTkImage(img, size=(height, width))
         return img
 
@@ -960,7 +960,7 @@ class GUI(customtkinter.CTk):
             sidebar_frame,
             fg_color="#171717",
             text="",
-            image=self.ImageObject("Data\\Images\\GUI\\user.png", 130, 130),
+            image=self.ImageObject("Data\\Images\\GUI\\logo.png", 130, 130),
         ).grid(row=0, column=0, sticky="nsew", padx=15, pady=(10, 30))
         profile_button = customtkinter.CTkButton(
             sidebar_frame,
@@ -5471,9 +5471,9 @@ class GUI(customtkinter.CTk):
 
 if __name__ == "__main__":
     app = GUI()
-    # app.Profile()
+    app.Profile()
 
     # app.Log()
-    app.weatherGUI()
+    # app.weatherGUI()
     # app.Games()
     app.mainloop()
