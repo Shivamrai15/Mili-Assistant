@@ -80,7 +80,7 @@ engine.setProperty("voice", voices[1].id)
 
 
 # -------------------------------------------------------------------------------------------------------
-def defaultMiliGeneralSettings()->dict:
+def defaultMiliGeneralSettings() -> dict:
     defaultSettings = open(
         application_directory + "\\Data\\Cache\\Mili Settings.settings", "rb"
     )
@@ -395,19 +395,23 @@ class MoviesData:
 
 #  Functions to return random jokes
 # -------------------------------------------------------------------------------------------------------
-async def randomJokes():
+def randomJokes():
     value = defaultMiliGeneralSettings().get("Explicit content")
     if value == 0:
-        value = True
+        url = "https://v2.jokeapi.dev/joke/Miscellaneous?blacklistFlags=religious,sexist,explicit&type=twopart"
     else:
-        value = False
-    j = await Jokes()
-    joke = await j.get_joke(safe_mode=value)
-    if joke["type"] == "single":
-        speak(type(joke["joke"]))
-    else:
-        speak(joke["setup"])
-        speak(joke["delivery"])
+        url = "https://v2.jokeapi.dev/joke/Miscellaneous,Dark?type=twopart"
+    try:
+        response = requests.get(url)
+        response = response.json()
+        setup = response["setup"]
+        delivery = response["delivery"]
+        speak(setup)
+        speak(delivery)
+    except:
+        speak(
+            "I'm sorry, it seems my humor circuits are in need of an upgrade. I'm not able to come up with a joke right now. Is there anything else I can assist you with?"
+        )
 
 
 # -------------------------------------------------------------------------------------------------------
@@ -1209,7 +1213,7 @@ def trained_mode_response(query: str) -> bool:
         elif context_set == "riddle":
             getRiddles()
         elif context_set == "joke":
-            asyncio.run(randomJokes())
+            randomJokes()
         elif context_set == "love":
             QNA.love(query)
         elif context_set == "dance":
@@ -1257,8 +1261,13 @@ if __name__ == "__main__":
             if _id == 1:
                 query = takeCommand().lower()
                 profanity = profanityFilter(query)
-                if profanityFilter is True and defaultMiliGeneralSettings().get("Explicit content") == 0:
-                    speak("Your command contains profanity. To continue, please enable explicit content in your Mili settings")
+                if (
+                    profanityFilter is True
+                    and defaultMiliGeneralSettings().get("Explicit content") == 0
+                ):
+                    speak(
+                        "Your command contains profanity. To continue, please enable explicit content in your Mili settings"
+                    )
                 else:
                     AI_models(query)
                     flag = True
